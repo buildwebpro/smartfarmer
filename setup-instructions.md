@@ -46,7 +46,7 @@ NEXT_PUBLIC_LIFF_ID=your_liff_id_here
 ### ขั้นตอน:
 1. ใน LINE Developers Console
 2. ไปที่ **Messaging API** tab
-3. ใส่ Webhook URL: `https://drone-service-app.vercel.app/api/line/webhook`
+3. ใส่ Webhook URL: `https://drone-booking-app.vercel.app/api/line/webhook`
 4. กด **Verify** 
 5. ถ้าผ่านจะขึ้น ✅
 6. เปิด **Use webhook**
@@ -61,7 +61,7 @@ NEXT_PUBLIC_LIFF_ID=your_liff_id_here
 4. ตั้งค่า:
    - LIFF app name: "Drone Booking"
    - Size: Full
-   - Endpoint URL: `https://drone-service-app.vercel.app/line/liff/booking`
+   - Endpoint URL: `https://drone-booking-app.vercel.app/line/liff/booking`
 5. Copy **LIFF ID** ไปใส่ใน `NEXT_PUBLIC_LIFF_ID`
 
 ## 6. Deploy ใหม่

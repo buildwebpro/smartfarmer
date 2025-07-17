@@ -33,8 +33,7 @@ export default function BookingPage() {
     cropType: "",
     sprayType: "",
     gpsCoordinates: "",
-    selectedDate: null as Date | null,
-    selectedTime: "",
+    selectedDate: undefined as Date | undefined,
     notes: "",
   })
 
@@ -53,8 +52,6 @@ export default function BookingPage() {
 
   const [totalPrice, setTotalPrice] = useState(0)
   const [depositAmount, setDepositAmount] = useState(0)
-
-  const timeSlots = ["06:00", "07:00", "08:00", "09:00", "10:00", "14:00", "15:00", "16:00", "17:00"]
 
   useEffect(() => {
     calculatePrice()
@@ -219,41 +216,23 @@ export default function BookingPage() {
             </CardContent>
           </Card>
 
-          {/* Date and Time Selection */}
+          {/* Date Selection */}
           <Card>
             <CardHeader>
-              <CardTitle>เลือกวันและเวลา</CardTitle>
+              <CardTitle>เลือกวัน</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6">
-                <div>
+                <div className="w-full">
                   <Label>เลือกวันที่ *</Label>
                   <Calendar
                     mode="single"
                     selected={formData.selectedDate}
                     onSelect={(date) => setFormData({ ...formData, selectedDate: date })}
                     locale={th}
-                    disabled={(date) => date < new Date()}
-                    className="rounded-md border"
+                    disabled={(date) => date && date < new Date()}
+                    className="w-full rounded-md border"
                   />
-                </div>
-                <div>
-                  <Label htmlFor="selectedTime">เลือกเวลา *</Label>
-                  <Select
-                    value={formData.selectedTime}
-                    onValueChange={(value) => setFormData({ ...formData, selectedTime: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกเวลา" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time} น.
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
             </CardContent>

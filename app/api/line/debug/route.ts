@@ -17,9 +17,9 @@ export async function GET() {
       adminUserIdLength: process.env.ADMIN_LINE_USER_ID?.length || 0,
     },
     urls: {
-      baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
-      webhookUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/line/webhook`,
-      liffUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/line/liff/booking`,
+      baseUrl: "https://drone-booking-app.vercel.app",
+      webhookUrl: "https://drone-booking-app.vercel.app/api/line/webhook",
+      liffUrl: "https://drone-booking-app.vercel.app/line/liff/booking",
       hasLiffId: !!process.env.NEXT_PUBLIC_LIFF_ID,
     },
   }
