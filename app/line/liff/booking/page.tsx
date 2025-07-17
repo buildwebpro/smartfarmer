@@ -10,8 +10,9 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, Calculator, CreditCard, Zap } from "lucide-react"
+import { MapPin, Calculator, CreditCard } from "lucide-react"
 import { th } from "date-fns/locale"
+import Image from "next/image"
 
 interface CropType {
   id: string
@@ -25,10 +26,7 @@ interface SprayType {
   pricePerRai: number
 }
 
-export default function LIFFBookingPage() {
-  const [liff, setLiff] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-
+export default function BookingPage() {
   const [formData, setFormData] = useState({
     customerName: "",
     phoneNumber: "",
@@ -36,56 +34,42 @@ export default function LIFFBookingPage() {
     cropType: "",
     sprayType: "",
     gpsCoordinates: "",
-    selectedDate: null as Date | null,
-    selectedTime: "",
+    selectedDate: undefined as Date | undefined,
     notes: "",
   })
+  const [lineUserId, setLineUserId] = useState<string>("")
 
-  const [cropTypes] = useState<CropType[]>([
-    { id: "1", name: "ข้าว", pricePerRai: 50 },
-    { id: "2", name: "อ้อย", pricePerRai: 70 },
-    { id: "3", name: "ทุเรียน", pricePerRai: 100 },
-    { id: "4", name: "มันสำปะหลัง", pricePerRai: 70 },
-  ])
-
-  const [sprayTypes] = useState<SprayType[]>([
-    { id: "1", name: "ปุ๋ย", pricePerRai: 100 },
-    { id: "2", name: "ฮอร์โมน", pricePerRai: 150 },
-    { id: "3", name: "ยาฆ่าหญ้า", pricePerRai: 200 },
-  ])
+  const [cropTypes, setCropTypes] = useState<CropType[]>([])
+  const [sprayTypes, setSprayTypes] = useState<SprayType[]>([])
 
   const [totalPrice, setTotalPrice] = useState(0)
   const [depositAmount, setDepositAmount] = useState(0)
-
-  const timeSlots = ["06:00", "07:00", "08:00", "09:00", "10:00", "14:00", "15:00", "16:00", "17:00"]
-
-  useEffect(() => {
-    // Initialize LIFF
-    const initLiff = async () => {
-      try {
-        const liffModule = await import("@line/liff")
-        await liffModule.default.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID || "" })
-
-        if (liffModule.default.isLoggedIn()) {
-          const userProfile = await liffModule.default.getProfile()
-          setProfile(userProfile)
-          setFormData((prev) => ({
-            ...prev,
-            customerName: userProfile.displayName || "",
-          }))
-        }
-
-        setLiff(liffModule.default)
-      } catch (error) {
-        console.error("LIFF initialization failed:", error)
-      }
-    }
-
-    initLiff()
-  }, [])
+  const [showQR, setShowQR] = useState(false)
+  const [lastDeposit, setLastDeposit] = useState(0)
 
   useEffect(() => {
     calculatePrice()
+    // ดึงข้อมูลชนิดพืชและสารพ่นจาก Supabase
+    const fetchTypes = async () => {
+      const { data: crops } = await fetch("/api/crop-types").then(res => res.json())
+      setCropTypes(crops || [])
+      const { data: sprays } = await fetch("/api/spray-types").then(res => res.json())
+      setSprayTypes(sprays || [])
+    }
+    fetchTypes()
+    // ดึง LINE USER ID จาก LIFF SDK
+    const getLineUserId = async () => {
+      if (typeof window !== "undefined" && (window as any).liff) {
+        const liff = (window as any).liff
+        if (!liff.isLoggedIn()) {
+          liff.login()
+        } else {
+          const profile = await liff.getProfile()
+          setLineUserId(profile.userId)
+        }
+      }
+    }
+    getLineUserId()
   }, [formData.areaSize, formData.cropType, formData.sprayType])
 
   const calculatePrice = () => {
@@ -108,7 +92,7 @@ export default function LIFFBookingPage() {
 
     const bookingData = {
       ...formData,
-      lineUserId: profile?.userId,
+      lineUserId, // ส่ง userId ไปกับข้อมูล order
       totalPrice,
       depositAmount,
       status: "pending_payment",
@@ -116,7 +100,7 @@ export default function LIFFBookingPage() {
     }
 
     try {
-      const response = await fetch("/api/line/bookings", {
+      const response = await fetch("/api/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -125,16 +109,9 @@ export default function LIFFBookingPage() {
       })
 
       if (response.ok) {
-        // Send success message to LINE chat
-        if (liff) {
-          liff.sendMessages([
-            {
-              type: "text",
-              text: `✅ การจองสำเร็จ!\n\nรายละเอียด:\n• ชื่อ: ${formData.customerName}\n• พืช: ${cropTypes.find((c) => c.id === formData.cropType)?.name}\n• สาร: ${sprayTypes.find((s) => s.id === formData.sprayType)?.name}\n• พื้นที่: ${formData.areaSize} ไร่\n• ราคารวม: ${totalPrice.toLocaleString()} บาท\n• มัดจำ: ${depositAmount.toLocaleString()} บาท\n\nเราจะติดต่อกลับเพื่อยืนยันการชำระเงินครับ`,
-            },
-          ])
-          liff.closeWindow()
-        }
+        setLastDeposit(depositAmount)
+        setShowQR(true)
+        // ไม่ alert, ไม่ redirect
       } else {
         alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง")
       }
@@ -145,197 +122,196 @@ export default function LIFFBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-4">
-      <div className="container mx-auto px-4 max-w-2xl">
-        <div className="text-center mb-6">
-          <div className="flex justify-center mb-4">
-            <Zap className="h-12 w-12 text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">จองบริการพ่นยาโดรน</h1>
-          <p className="text-gray-600">กรอกข้อมูลเพื่อจองบริการ</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">จองบริการพ่นยาโดรน</h1>
+          <p className="text-gray-600">กรอกข้อมูลเพื่อจองบริการพ่นยาโดรน</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Customer Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">ข้อมูลลูกค้า</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="customerName">ชื่อ-นามสกุล *</Label>
-                <Input
-                  id="customerName"
-                  value={formData.customerName}
-                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="phoneNumber">เบอร์โทรศัพท์ *</Label>
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  required
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Service Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">รายละเอียดบริการ</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="areaSize">จำนวนไร่ *</Label>
-                <Input
-                  id="areaSize"
-                  type="number"
-                  step="0.1"
-                  value={formData.areaSize}
-                  onChange={(e) => setFormData({ ...formData, areaSize: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="cropType">ชนิดพืช *</Label>
-                <Select
-                  value={formData.cropType}
-                  onValueChange={(value) => setFormData({ ...formData, cropType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="เลือกชนิดพืช" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {cropTypes.map((crop) => (
-                      <SelectItem key={crop.id} value={crop.id}>
-                        {crop.name} ({crop.pricePerRai} บาท/ไร่)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="sprayType">ชนิดสารพ่น *</Label>
-                <Select
-                  value={formData.sprayType}
-                  onValueChange={(value) => setFormData({ ...formData, sprayType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="เลือกสารพ่น" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sprayTypes.map((spray) => (
-                      <SelectItem key={spray.id} value={spray.id}>
-                        {spray.name} ({spray.pricePerRai} บาท/ไร่)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="gpsCoordinates">พิกัด GPS หรือที่อยู่</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="gpsCoordinates"
-                    placeholder="ระบุพิกัด GPS หรือที่อยู่"
-                    value={formData.gpsCoordinates}
-                    onChange={(e) => setFormData({ ...formData, gpsCoordinates: e.target.value })}
-                  />
-                  <Button type="button" variant="outline" size="sm">
-                    <MapPin className="h-4 w-4" />
-                  </Button>
+        {showQR ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <h2 className="text-2xl font-bold mb-4 text-green-700">ชำระเงินมัดจำ</h2>
+            <Image src="/qr-promptpay.jpg" alt="PromptPay QR" width={320} height={320} className="rounded-lg border" />
+            <div className="mt-4 text-xl font-semibold text-green-700">ยอดมัดจำที่ต้องชำระ: {lastDeposit.toLocaleString()} บาท</div>
+            <div className="mt-2 text-gray-600">กรุณาสแกน QR เพื่อชำระเงินมัดจำ<br/>หลังชำระเงินแล้วรอเจ้าหน้าที่ตรวจสอบสถานะ</div>
+            <button className="mt-6 px-6 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowQR(false)}>กลับสู่หน้าจอง</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Customer Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>ข้อมูลลูกค้า</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="customerName">ชื่อ-นามสกุล *</Label>
+                    <Input
+                      id="customerName"
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phoneNumber">เบอร์โทรศัพท์ *</Label>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      value={formData.phoneNumber}
+                      onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Date and Time Selection */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">เลือกวันและเวลา</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            {/* Service Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle>รายละเอียดบริการ</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="areaSize">จำนวนไร่ *</Label>
+                    <Input
+                      id="areaSize"
+                      type="number"
+                      step="0.1"
+                      value={formData.areaSize}
+                      onChange={(e) => setFormData({ ...formData, areaSize: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cropType">ชนิดพืช *</Label>
+                    <Select
+                      value={formData.cropType}
+                      onValueChange={(value) => setFormData({ ...formData, cropType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือกชนิดพืช" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {cropTypes.map((crop) => (
+                          <SelectItem key={crop.id} value={crop.id}>
+                            {crop.name} ({crop.pricePerRai} บาท/ไร่)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="sprayType">ชนิดสารพ่น *</Label>
+                    <Select
+                      value={formData.sprayType}
+                      onValueChange={(value) => setFormData({ ...formData, sprayType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือกสารพ่น" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sprayTypes.map((spray) => (
+                          <SelectItem key={spray.id} value={spray.id}>
+                            {spray.name} ({spray.pricePerRai} บาท/ไร่)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div>
-                  <Label>เลือกวันที่ *</Label>
-                  <Calendar
-                    mode="single"
-                    selected={formData.selectedDate}
-                    onSelect={(date) => setFormData({ ...formData, selectedDate: date })}
-                    locale={th}
-                    disabled={(date) => date < new Date()}
-                    className="rounded-md border w-full"
-                  />
+                  <Label htmlFor="gpsCoordinates">พิกัด GPS</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="gpsCoordinates"
+                      placeholder="ระบุพิกัด GPS หรือที่อยู่"
+                      value={formData.gpsCoordinates}
+                      onChange={(e) => setFormData({ ...formData, gpsCoordinates: e.target.value })}
+                    />
+                    <Button type="button" variant="outline">
+                      <MapPin className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="selectedTime">เลือกเวลา *</Label>
-                  <Select
-                    value={formData.selectedTime}
-                    onValueChange={(value) => setFormData({ ...formData, selectedTime: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกเวลา" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeSlots.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time} น.
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Price Summary */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Calculator className="h-5 w-5" />
-                สรุปราคา
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>ราคารวมทั้งหมด:</span>
-                  <span className="font-semibold">{totalPrice.toLocaleString()} บาท</span>
+            {/* Date Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle>เลือกวัน</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="w-full">
+                    <Label>เลือกวันที่ *</Label>
+                    <Calendar
+                      mode="single"
+                      selected={formData.selectedDate}
+                      onSelect={(date) => setFormData({ ...formData, selectedDate: date })}
+                      locale={th}
+                      disabled={(date) => date && date < new Date()}
+                      className="w-full rounded-md border"
+                    />
+                    {formData.selectedDate && (
+                      <div className="mt-2 text-center text-green-700 font-semibold">
+                        วันที่ที่เลือก: {formData.selectedDate.toLocaleDateString("th-TH")}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex justify-between text-lg font-bold text-green-600">
-                  <span>ยอดมัดจำ (30%):</span>
-                  <span>{depositAmount.toLocaleString()} บาท</span>
+              </CardContent>
+            </Card>
+
+            {/* Price Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  สรุปราคา
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>ราคารวมทั้งหมด:</span>
+                    <span className="font-semibold">{totalPrice.toLocaleString()} บาท</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold text-green-600">
+                    <span>ยอดมัดจำ (30%):</span>
+                    <span>{depositAmount.toLocaleString()} บาท</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">หมายเหตุเพิ่มเติม</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Textarea
-                placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              />
-            </CardContent>
-          </Card>
+            {/* Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle>หมายเหตุเพิ่มเติม</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                />
+              </CardContent>
+            </Card>
 
-          <Button type="submit" size="lg" className="w-full bg-green-600 hover:bg-green-700">
-            <CreditCard className="h-4 w-4 mr-2" />
-            ยืนยันการจอง
-          </Button>
-        </form>
+            <div className="flex gap-4 justify-center">
+              <Button type="submit" size="lg" className="bg-green-600 hover:bg-green-700">
+                <CreditCard className="h-4 w-4 mr-2" />
+                ยืนยันการจองและชำระเงิน
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )

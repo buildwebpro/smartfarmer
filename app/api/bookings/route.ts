@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { supabase } from "@/lib/supabaseClient"
 
 interface BookingData {
   customerName: string
@@ -8,16 +9,13 @@ interface BookingData {
   sprayType: string
   gpsCoordinates: string
   selectedDate: string | null
-  selectedTime: string
   notes: string
   totalPrice: number
   depositAmount: number
   status: string
   createdAt: string
+  lineUserId: string
 }
-
-// Mock database - in production, use a real database
-const bookings: (BookingData & { id: string })[] = []
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,30 +26,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 })
     }
 
-    // Generate booking ID
-    const bookingId = `BK${Date.now()}`
+    // Insert to Supabase
+    const { data, error } = await supabase
+      .from("bookings")
+      .insert([
+        {
+          customer_name: bookingData.customerName,
+          phone_number: bookingData.phoneNumber,
+          area_size: bookingData.areaSize,
+          crop_type: bookingData.cropType,
+          spray_type: bookingData.sprayType,
+          gps_coordinates: bookingData.gpsCoordinates,
+          selected_date: bookingData.selectedDate,
+          notes: bookingData.notes,
+          total_price: bookingData.totalPrice,
+          deposit_amount: bookingData.depositAmount,
+          status: "pending_payment",
+          created_at: bookingData.createdAt,
+          line_user_id: bookingData.lineUserId,
+        },
+      ])
+      .select()
+      .single()
 
-    // Create booking record
-    const newBooking = {
-      id: bookingId,
-      ...bookingData,
-      createdAt: new Date().toISOString(),
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
-    // Save to mock database
-    bookings.push(newBooking)
-
-    // In production, you would:
-    // 1. Save to database (Supabase/Firebase)
-    // 2. Send LINE notification to customer
-    // 3. Generate QR code for payment
-    // 4. Send notification to admin
 
     return NextResponse.json({
       success: true,
-      bookingId,
+      bookingId: data?.id,
       message: "การจองสำเร็จ",
-      data: newBooking,
+      data,
     })
   } catch (error) {
     console.error("Error creating booking:", error)
@@ -61,9 +67,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    const { data, error } = await supabase.from("bookings").select("*")
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({
       success: true,
-      data: bookings,
+      data,
     })
   } catch (error) {
     console.error("Error fetching bookings:", error)
