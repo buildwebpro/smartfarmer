@@ -65,6 +65,11 @@ export default function AdminDashboard() {
       router.push("/admin/login")
       return
     }
+    // ถ้าไม่ใช่ admin ให้ redirect
+    if (user.role !== "admin") {
+      router.push("/admin/login")
+      return
+    }
     fetchDashboardData()
   }, [user, router])
 
@@ -136,6 +141,9 @@ export default function AdminDashboard() {
   if (!user) {
     return <div>กำลังโหลด...</div>
   }
+  if (user.role !== "admin") {
+    return <div>คุณไม่มีสิทธิ์เข้าถึงหน้านี้</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,7 +155,7 @@ export default function AdminDashboard() {
               <Zap className="h-8 w-8 text-green-600" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">ระบบจัดการโดรน</h1>
-                <p className="text-sm text-gray-600">ยินดีต้อนรับ, {user.name}</p>
+                <p className="text-sm text-gray-600">ยินดีต้อนรับ, {user.username || user.email}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">

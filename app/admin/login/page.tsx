@@ -10,16 +10,18 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Zap, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
-    username: "",
+    email: "",
     password: "",
   })
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,30 +29,10 @@ export default function LoginPage() {
     setError("")
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store auth token/session
-        localStorage.setItem("auth_token", data.token)
-        localStorage.setItem("user_role", data.user.role)
-        localStorage.setItem("user_name", data.user.name)
-
-        // Redirect to dashboard
-        router.push("/admin/dashboard")
-      } else {
-        setError(data.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ")
-      }
-    } catch (error) {
-      console.error("Login error:", error)
-      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ")
+      await login(formData.email, formData.password)
+      router.push("/admin/dashboard")
+    } catch (err: any) {
+      setError(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ")
     } finally {
       setIsLoading(false)
     }
@@ -77,12 +59,12 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="username">ชื่อผู้ใช้</Label>
+              <Label htmlFor="email">อีเมล</Label>
               <Input
-                id="username"
-                type="text"
-                value={formData.username}
-                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
                 disabled={isLoading}
               />

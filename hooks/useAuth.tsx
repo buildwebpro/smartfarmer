@@ -1,18 +1,21 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { supabase } from '../lib/supabaseClient'
+import { signInWithEmail, signUpWithEmail, signOut, getAdminUserByEmail } from '../lib/auth'
 
 interface User {
   id: string
-  name: string
-  username: string
-  role: "admin" | "operator" | "pilot"
+  email: string
+  username?: string
+  role?: string
 }
 
 interface AuthContextType {
   user: User | null
-  login: (token: string, userData: User) => void
-  logout: () => void
+  login: (email: string, password: string) => Promise<void>
+  signup: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
   isLoading: boolean
 }
 
@@ -23,37 +26,85 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing auth token on mount
-    const token = localStorage.getItem("auth_token")
-    const userData = localStorage.getItem("user_name")
-    const userRole = localStorage.getItem("user_role")
-
-    if (token && userData && userRole) {
-      setUser({
-        id: "1",
-        name: userData,
-        username: userData,
-        role: userRole as "admin" | "operator" | "pilot",
-      })
+    const getUser = async () => {
+      setIsLoading(true)
+      const { data, error } = await supabase.auth.getUser()
+      if (data?.user) {
+        // ดึงข้อมูล admin user จากตาราง admin_users
+        const { data: adminData } = await getAdminUserByEmail(data.user.email!)
+        if (adminData) {
+          setUser({
+            id: adminData.id,
+            email: adminData.email,
+            username: adminData.username,
+            role: adminData.role,
+          })
+        } else {
+          setUser({ id: data.user.id, email: data.user.email! })
+        }
+      } else {
+        setUser(null)
+      }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+    getUser()
+    // Listen for auth state changes
+    const { data: listener } = supabase.auth.onAuthStateChange(() => {
+      getUser()
+    })
+    return () => {
+      listener?.subscription.unsubscribe()
+    }
   }, [])
 
-  const login = (token: string, userData: User) => {
-    localStorage.setItem("auth_token", token)
-    localStorage.setItem("user_name", userData.name)
-    localStorage.setItem("user_role", userData.role)
-    setUser(userData)
+  const login = async (email: string, password: string) => {
+    setIsLoading(true)
+    const { data, error } = await signInWithEmail(email, password)
+    if (error) throw error
+    if (data?.user) {
+      const { data: adminData } = await getAdminUserByEmail(email)
+      if (adminData) {
+        setUser({
+          id: adminData.id,
+          email: adminData.email,
+          username: adminData.username,
+          role: adminData.role,
+        })
+      } else {
+        setUser({ id: data.user.id, email: data.user.email! })
+      }
+    }
+    setIsLoading(false)
   }
 
-  const logout = () => {
-    localStorage.removeItem("auth_token")
-    localStorage.removeItem("user_name")
-    localStorage.removeItem("user_role")
+  const signup = async (email: string, password: string) => {
+    setIsLoading(true)
+    const { data, error } = await signUpWithEmail(email, password)
+    if (error) throw error
+    if (data?.user) {
+      const { data: adminData } = await getAdminUserByEmail(email)
+      if (adminData) {
+        setUser({
+          id: adminData.id,
+          email: adminData.email,
+          username: adminData.username,
+          role: adminData.role,
+        })
+      } else {
+        setUser({ id: data.user.id, email: data.user.email! })
+      }
+    }
+    setIsLoading(false)
+  }
+
+  const logout = async () => {
+    setIsLoading(true)
+    await signOut()
     setUser(null)
+    setIsLoading(false)
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, isLoading }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
