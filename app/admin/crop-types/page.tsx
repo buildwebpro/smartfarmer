@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Wheat, Plus, Edit, Trash2, RefreshCw, Banknote, Sprout, Droplets } from "lucide-react"
+import ProtectedRoute from "@/components/protected-route"
 
 interface CropType {
   id: string
@@ -72,18 +73,29 @@ export default function AdminCropTypesPage() {
 
   // Crop functions
   const handleAddCrop = async () => {
-    if (!newCrop.name || !newCrop.pricePerRai) return
+    if (!newCrop.name || !newCrop.pricePerRai) {
+      alert("กรุณากรอกข้อมูลให้ครบถ้วน")
+      return
+    }
     try {
-      await fetch("/api/crop-types", {
+      const response = await fetch("/api/crop-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newCrop),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+      
       setNewCrop({ name: "", pricePerRai: 0 })
       setIsAddCropDialogOpen(false)
       fetchCropTypes()
+      alert("เพิ่มชนิดพืชสำเร็จ")
     } catch (error) {
       console.error("Error adding crop:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถเพิ่มข้อมูลได้"}`)
     }
   }
 
@@ -95,16 +107,24 @@ export default function AdminCropTypesPage() {
   const handleUpdateCrop = async () => {
     if (!editingCrop) return
     try {
-      await fetch("/api/crop-types", {
+      const response = await fetch("/api/crop-types", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingCrop),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+      
       setEditingCrop(null)
       setEditingCropId(null)
       fetchCropTypes()
+      alert("อัพเดตข้อมูลสำเร็จ")
     } catch (error) {
       console.error("Error updating crop:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถอัพเดตข้อมูลได้"}`)
     }
   }
 
@@ -114,32 +134,53 @@ export default function AdminCropTypesPage() {
   }
 
   const handleDeleteCrop = async (id: string) => {
+    if (!confirm("คุณแน่ใจว่าต้องการลบชนิดพืชนี้?")) return
+    
     try {
-      await fetch("/api/crop-types", {
+      const response = await fetch("/api/crop-types", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+      
       fetchCropTypes()
+      alert("ลบข้อมูลสำเร็จ")
     } catch (error) {
       console.error("Error deleting crop:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถลบข้อมูลได้"}`)
     }
   }
 
   // Spray functions
   const handleAddSpray = async () => {
-    if (!newSpray.name || !newSpray.pricePerRai) return
+    if (!newSpray.name || !newSpray.pricePerRai) {
+      alert("กรุณากรอกข้อมูลให้ครบถ้วน")
+      return
+    }
     try {
-      await fetch("/api/spray-types", {
+      const response = await fetch("/api/spray-types", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newSpray),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+      
       setNewSpray({ name: "", pricePerRai: 0, description: "" })
       setIsAddSprayDialogOpen(false)
       fetchSprayTypes()
+      alert("เพิ่มยาพ่นสำเร็จ")
     } catch (error) {
       console.error("Error adding spray:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถเพิ่มข้อมูลได้"}`)
     }
   }
 
@@ -151,16 +192,24 @@ export default function AdminCropTypesPage() {
   const handleUpdateSpray = async () => {
     if (!editingSpray) return
     try {
-      await fetch("/api/spray-types", {
+      const response = await fetch("/api/spray-types", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editingSpray),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+      
       setEditingSpray(null)
       setEditingSprayId(null)
       fetchSprayTypes()
+      alert("อัพเดตข้อมูลสำเร็จ")
     } catch (error) {
       console.error("Error updating spray:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถอัพเดตข้อมูลได้"}`)
     }
   }
 
@@ -170,25 +219,36 @@ export default function AdminCropTypesPage() {
   }
 
   const handleDeleteSpray = async (id: string) => {
+    if (!confirm("คุณแน่ใจว่าต้องการลบยาพ่นนี้?")) return
+    
     try {
-      await fetch("/api/spray-types", {
+      const response = await fetch("/api/spray-types", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+      
       fetchSprayTypes()
+      alert("ลบข้อมูลสำเร็จ")
     } catch (error) {
       console.error("Error deleting spray:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถลบข้อมูลได้"}`)
     }
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
-            จัดการพืชและยาพ่น
-          </h1>
+    <ProtectedRoute>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+              จัดการพืชและยาพ่น
+            </h1>
           <p className="text-gray-600 mt-1">กำหนดชนิดพืช ยาพ่น และราคาบริการ</p>
         </div>
         <div className="flex gap-2">
@@ -576,6 +636,7 @@ export default function AdminCropTypesPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </ProtectedRoute>
   )
 }

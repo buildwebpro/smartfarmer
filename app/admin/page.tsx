@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ModernDashboardStats } from "@/components/modern-dashboard-stats"
 import { ModernQuickActions } from "@/components/modern-quick-actions"
 import { ModernRecentOrders } from "@/components/modern-recent-orders"
+import ProtectedRoute from "@/components/protected-route"
 import { 
   Calendar, 
   AlertCircle, 
@@ -65,6 +66,17 @@ export default function AdminDashboard() {
   })
 
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
+  const [currentDate, setCurrentDate] = useState<string>("")
+
+  // ✅ ตั้งค่าวันที่ปัจจุบันหลังจาก component mount เพื่อป้องกัน hydration error
+  useEffect(() => {
+    setCurrentDate(new Date().toLocaleDateString("th-TH", { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    }))
+  }, [])
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -157,16 +169,17 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
-            Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1">
-            ยินดีต้อนรับสู่ระบบจัดการบริการพ่นยาโดรน
-          </p>
+    <ProtectedRoute>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-gray-600 mt-1">
+              ยินดีต้อนรับสู่ระบบจัดการบริการพ่นยาโดรน
+            </p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
@@ -207,12 +220,7 @@ export default function AdminDashboard() {
                     ตารางงานวันนี้
                   </CardTitle>
                   <CardDescription className="text-gray-500">
-                    {new Date().toLocaleDateString("th-TH", { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+                    {currentDate || "กำลังโหลด..."}
                   </CardDescription>
                 </div>
               </div>
@@ -279,6 +287,7 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   )
 }

@@ -3,17 +3,45 @@
 import type { ReactNode } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { ModernNavigation } from "@/components/modern-navigation"
+import { useRouter, usePathname } from "next/navigation"
+import { useEffect } from "react"
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
 
-  // ถ้ายังไม่ได้ login หรือกำลังโหลด จะไม่แสดง sidebar
-  if (isLoading || !user) {
+  // ✅ ตรวจสอบการล็อคอิน และ redirect ถ้าไม่ได้ล็อคอิน (ยกเว้นหน้า login)
+  useEffect(() => {
+    if (!isLoading && !user && !pathname.includes('/login')) {
+      router.push("/admin/login")
+    }
+  }, [user, isLoading, router, pathname])
+
+  // ✅ ถ้าเป็นหน้า login ให้แสดงเลยไม่ต้องรอ (ใช้ usePathname แทน window.location)
+  if (pathname.includes('/login')) {
     return (
       <div className="min-h-screen bg-gray-50">
         {children}
       </div>
     )
+  }
+
+  // ถ้ายังไม่ได้ login หรือกำลังโหลด
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ถ้าไม่ได้ login ให้แสดงหน้าเปล่าขณะ redirect
+  if (!user) {
+    return null
   }
 
   return (

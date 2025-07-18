@@ -28,4 +28,37 @@ export async function getAdminUserByEmail(email: string) {
     .eq('email', email)
     .single()
   return { data, error }
+}
+
+// ฟังก์ชันใหม่: ล็อคอินและดึงข้อมูล admin ในคราวเดียว
+export async function signInWithEmailAndGetAdminData(email: string, password: string) {
+  try {
+    // Step 1: ล็อคอิน
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    
+    if (authError) {
+      return { data: null, error: authError, adminData: null }
+    }
+    
+    // Step 2: ดึงข้อมูل admin ทันที (ถ้าล็อคอินสำเร็จ)
+    const { data: adminData, error: adminError } = await supabase
+      .from('admin_users')
+      .select('id, email, username, role')
+      .eq('email', email)
+      .single()
+    
+    // Return ข้อมูลทั้งหมด (ไม่ throw error ถ้าไม่มีข้อมูล admin)
+    return { 
+      data: authData, 
+      error: null, 
+      adminData: adminData || null,
+      adminError: adminError
+    }
+    
+  } catch (error) {
+    return { data: null, error: error as any, adminData: null }
+  }
 } 

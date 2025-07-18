@@ -23,12 +23,12 @@ export default function LoginPage() {
   const router = useRouter()
   const { login, user, isLoading: authLoading } = useAuth()
 
-  // ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard
+  // ✅ ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard (แค่ตรวจสอบ user เท่านั้น)
   useEffect(() => {
-    if (!authLoading && user) {
+    if (user) {
       router.push("/admin")
     }
-  }, [user, authLoading, router])
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,17 +45,17 @@ export default function LoginPage() {
     }
   }
 
-  // แสดง loading state ขณะตรวจสอบ authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
-        </div>
-      </div>
-    )
-  }
+  // ✅ ลบการตรวจสอบ authLoading ออก เพื่อให้หน้า login โหลดเร็ว
+  // if (authLoading) {
+  //   return (
+  //     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+  //       <div className="text-center">
+  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+  //         <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+  //       </div>
+  //     </div>
+  //   )
+  // }
 
   // ถ้า login แล้ว ให้แสดงหน้าเปล่าขณะ redirect
   if (user) {

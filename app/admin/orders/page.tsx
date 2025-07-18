@@ -7,6 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCw, ShoppingCart, Clock, CheckCircle, Play, User, Calendar, MapPin, Banknote } from "lucide-react"
+import ProtectedRoute from "@/components/protected-route"
 
 interface Order {
   id: string
@@ -84,14 +85,15 @@ export default function AdminOrdersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
-            จัดการออร์เดอร์
-          </h1>
-          <p className="text-gray-600 mt-2">รายการจองบริการพ่นยาโดรน</p>
-        </div>
+    <ProtectedRoute>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+              จัดการออร์เดอร์
+            </h1>
+            <p className="text-gray-600 mt-2">รายการจองบริการพ่นยาโดรน</p>
+          </div>
         <Button 
           onClick={() => fetchOrders()} 
           disabled={loading}
@@ -269,6 +271,7 @@ export default function AdminOrdersPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ProtectedRoute>
   )
 }
