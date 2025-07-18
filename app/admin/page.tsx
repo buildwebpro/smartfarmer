@@ -157,14 +157,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
             Dashboard
           </h1>
-          <p className="text-gray-600 mt-2">
+          <p className="text-gray-600 mt-1">
             ยินดีต้อนรับสู่ระบบจัดการบริการพ่นยาโดรน
           </p>
         </div>
@@ -187,14 +187,14 @@ export default function AdminDashboard() {
       <ModernQuickActions />
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Orders */}
         <div className="lg:col-span-1">
           <ModernRecentOrders orders={recentOrders} />
         </div>
 
         {/* Today's Schedule & Alerts */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="lg:col-span-1 space-y-4">
           {/* Today's Schedule */}
           <Card className="shadow-lg border-0 bg-white">
             <CardHeader className="pb-4">

@@ -26,7 +26,7 @@ export default function LoginPage() {
   // ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard
   useEffect(() => {
     if (!authLoading && user) {
-      router.push("/admin/dashboard")
+      router.push("/admin")
     }
   }, [user, authLoading, router])
 
@@ -37,7 +37,7 @@ export default function LoginPage() {
 
     try {
       await login(formData.email, formData.password)
-      router.push("/admin/dashboard")
+      router.push("/admin")
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ")
     } finally {
