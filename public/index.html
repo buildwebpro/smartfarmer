@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บริการบินโดรนเพื่อการเกษตร | บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก.</title>
+    <meta name="description" content="บริการโดรนพ่นยาและปุ๋ยเพื่อการเกษตรครบวงจร โดยทีมงานมืออาชีพ">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                fontFamily: {
+                    sans: ['Sarabun', 'sans-serif'],
+                },
+                extend: {
+                    colors: {
+                        primary: "#2d7d46",
+                        secondary: "#3a9d5d",
+                        accent: "#f5a623"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hero-bg {
+            background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://i.ibb.co/QvvFLKGT/dron-service-image2-w-P.webp');
+        }
+    </style>
+</head>
+<body class="font-sans bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center">
+                <img src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" alt="โลโก้ บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก." class="h-12">
+            </div>
+            <nav class="hidden md:block">
+                <ul class="flex space-x-8">
+                    <li><a href="#home" class="text-gray-800 hover:text-primary font-medium">หน้าแรก</a></li>
+                    <li><a href="#services" class="text-gray-800 hover:text-primary font-medium">บริการของเรา</a></li>
+                    <li><a href="#about" class="text-gray-800 hover:text-primary font-medium">เกี่ยวกับเรา</a></li>
+                    <li><a href="#contact" class="text-gray-800 hover:text-primary font-medium">ติดต่อเรา</a></li>
+                </ul>
+            </nav>
+            <button class="md:hidden text-gray-800">
+                <i class="fas fa-bars text-2xl"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-bg bg-cover bg-center text-white py-40">
+        <div class="container mx-auto px-4 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6">บริการโดรนพ่นยาและปุ๋ยเพื่อการเกษตร</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">เทคโนโลยีโดรนล้ำสมัย พร้อมให้บริการด้วยทีมงานมืออาชีพ</p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="https://drone-booking-app.vercel.app/line/liff/booking" class="bg-primary hover:bg-secondary text-white font-bold py-3 px-6 rounded-lg transition duration-300">จองโดรน</a>
+                <a href="#services" class="bg-white hover:bg-gray-100 text-primary font-bold py-3 px-6 rounded-lg transition duration-300">บริการของเรา</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">บริการของเรา</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition duration-300">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fas fa-spray-can"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">พ่นยาปราบศัตรูพืช</h3>
+                    <p class="text-gray-600">บริการพ่นยาด้วยโดรนแม่นยำ ประหยัดเวลาและแรงงาน</p>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition duration-300">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">พ่นปุ๋ยละเอียด</h3>
+                    <p class="text-gray-600">กระจายปุ๋ยอย่างสม่ำเสมอทั่วทั้งพื้นที่ เพิ่มผลผลิต</p>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition duration-300">
+                    <div class="text-primary text-4xl mb-4">
+                        <i class="fas fa-map-marked-alt"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">สำรวจพื้นที่เกษตร</h3>
+                    <p class="text-gray-600">วิเคราะห์และประเมินพื้นที่ด้วยเทคโนโลยีโดรน</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center gap-8">
+                <div class="md:w-1/2">
+                    <img src="https://i.ibb.co/Hp1QkBPC/drone-service-about-us01-w-P.webp" alt="ทีมงานโดรนเกษตร" class="rounded-lg shadow-md w-full">
+                </div>
+                <div class="md:w-1/2">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">เกี่ยวกับเรา</h2>
+                    <p class="text-gray-600 mb-4">บริษัท พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จำกัด ให้บริการโดรนเกษตรครบวงจร ด้วยประสบการณ์และทีมงานมืออาชีพ</p>
+                    <p class="text-gray-600 mb-4">เรามุ่งมั่นนำเทคโนโลยีล้ำสมัยมาช่วยเพิ่มประสิทธิภาพการเกษตร ลดต้นทุน และเพิ่มผลผลิตให้เกษตรกรไทย</p>
+                    <ul class="space-y-2 mb-6">
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-primary mr-2"></i>
+                            <span>โดรนรุ่นใหม่ พร้อมระบบนำทางอัตโนมัติ</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-primary mr-2"></i>
+                            <span>ทีมงานชำนาญการ พร้อมให้คำปรึกษา</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-primary mr-2"></i>
+                            <span>บริการครบวงจร หลังการขายดีเยี่ยม</span>
+                        </li>
+                    </ul>
+                    <a href="https://drone-booking-app.vercel.app/line/liff/booking" class="bg-primary hover:bg-secondary text-white font-bold py-3 px-6 rounded-lg transition duration-300">จองโดรน</a>
+                    
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-12">ผลงานของเรา</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <img src="https://i.ibb.co/xyGQhBN/drone-service-our-service01-w-P.webp" alt="โดรนกำลังทำงาน" class="rounded-lg shadow-sm hover:shadow-md transition duration-300">
+                <img src="https://i.ibb.co/RTdW6wcn/drone-service-our-service02-w-P.webp" alt="เกษตรกรใช้บริการ" class="rounded-lg shadow-sm hover:shadow-md transition duration-300">
+                <img src="https://i.ibb.co/YBnH6S2w/drone-service-our-service03-w-P.webp" alt="พื้นที่เกษตรหลังพ่นยา" class="rounded-lg shadow-sm hover:shadow-md transition duration-300">
+                <img src="https://i.ibb.co/pB5RHvHB/drone-service-our-service04-w-P.webp" alt="ทีมงานบริการโดรน" class="rounded-lg shadow-sm hover:shadow-md transition duration-300">
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-16 bg-primary text-white">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-12">ติดต่อเรา</h2>
+            <div class="flex flex-col md:flex-row gap-8">
+                <div class="md:w-1/2">
+                    <h3 class="text-xl font-bold mb-4">บริษัท พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จำกัด</h3>
+                    <p class="mb-4"><i class="fas fa-map-marker-alt mr-2"></i> ที่อยู่บริษัท กรุงเทพมหานคร</p>
+                    <p class="mb-4"><i class="fas fa-phone-alt mr-2"></i> 02-XXX-XXXX</p>
+                    <p class="mb-4"><i class="fas fa-mobile-alt mr-2"></i> 08X-XXX-XXXX</p>
+                    <p class="mb-4"><i class="fas fa-envelope mr-2"></i> info@phrapirun.com</p>
+                    
+                    <div class="mt-6">
+                        <h4 class="text-lg font-bold mb-3">ติดตามเรา</h4>
+                        <div class="flex space-x-4">
+                            <a href="#" class="text-white hover:text-accent text-2xl"><i class="fab fa-facebook"></i></a>
+                            <a href="#" class="text-white hover:text-accent text-2xl"><i class="fab fa-line"></i></a>
+                            <a href="#" class="text-white hover:text-accent text-2xl"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="md:w-1/2">
+                    <form class="bg-white text-gray-800 p-6 rounded-lg shadow-md">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-bold mb-2" for="name">ชื่อ-นามสกุล</label>
+                            <input type="text" id="name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-bold mb-2" for="phone">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-bold mb-2" for="service">บริการที่สนใจ</label>
+                            <select id="service" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                                <option value="">เลือกบริการ</option>
+                                <option value="spray">พ่นยาปราบศัตรูพืช</option>
+                                <option value="fertilizer">พ่นปุ๋ยละเอียด</option>
+                                <option value="survey">สำรวจพื้นที่เกษตร</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-bold mb-2" for="message">รายละเอียด</label>
+                            <textarea id="message" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"></textarea>
+                        </div>
+                        <button type="submit" class="bg-primary hover:bg-secondary text-white font-bold py-2 px-6 rounded-lg transition duration-300">ส่งข้อความ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <img src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" alt="โลโก้ บ.พระพิรุนทร์" class="h-10">
+                    <p class="mt-2 text-gray-400">บริการโดรนเกษตรครบวงจร</p>
+                </div>
+                <div class="text-center md:text-right">
+                    <p class="text-gray-400">© 2023 บริษัท พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จำกัด</p>
+                    <p class="text-gray-400">"โดรนเพื่อการเกษตร" - นวัตกรรมเพื่อการเกษตรไทย</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle
+        document.querySelector('button').addEventListener('click', function() {
+            const nav = document.querySelector('nav');
+            nav.classList.toggle('hidden');
+            nav.classList.toggle('block');
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

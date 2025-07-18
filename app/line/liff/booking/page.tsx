@@ -161,16 +161,40 @@ export default function BookingPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
+        {/* Logo Section */}
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-4">
+            <Image 
+              src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" 
+              alt="โลโก้ บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก." 
+              width={150} 
+              height={60} 
+              className="h-12 w-auto"
+            />
+          </div>
+        </div>
+        
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">จองบริการพ่นยาโดรน</h1>
           <p className="text-gray-600">กรอกข้อมูลเพื่อจองบริการพ่นยาโดรน</p>
         </div>
         {showQR ? (
           <div className="flex flex-col items-center justify-center py-8">
+            {/* Logo ในหน้า QR */}
+            <div className="mb-6">
+              <Image 
+                src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" 
+                alt="โลโก้ บ.พระพิรุนทร์" 
+                width={120} 
+                height={48} 
+                className="h-10 w-auto"
+              />
+            </div>
+            
             <h2 className="text-2xl font-bold mb-4 text-green-700">ชำระเงินมัดจำ</h2>
             <Image src="/qr-promptpay.jpg" alt="PromptPay QR" width={320} height={320} className="rounded-lg border" />
             <div className="mt-4 text-xl font-semibold text-green-700">ยอดมัดจำที่ต้องชำระ: {lastDeposit.toLocaleString()} บาท</div>
-            <div className="mt-2 text-gray-600">กรุณาสแกน QR เพื่อชำระเงินมัดจำ<br/>หลังชำระเงินแล้วรอเจ้าหน้าที่ตรวจสอบสถานะ</div>
+            <div className="mt-2 text-gray-600 text-center">กรุณาสแกน QR เพื่อชำระเงินมัดจำ<br/>หลังชำระเงินแล้วรอเจ้าหน้าที่ตรวจสอบสถานะ</div>
             <button className="mt-6 px-6 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setShowQR(false)}>กลับสู่หน้าจอง</button>
           </div>
         ) : (

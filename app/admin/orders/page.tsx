@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { RefreshCw, ShoppingCart, Clock, CheckCircle, Play, User, Calendar, MapPin, Banknote } from "lucide-react"
 import ProtectedRoute from "@/components/protected-route"
 
+
 interface Order {
   id: string
   customer_name: string
