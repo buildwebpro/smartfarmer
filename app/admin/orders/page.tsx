@@ -182,6 +182,7 @@ export default function AdminOrdersPage() {
                   <TableHead>ลูกค้า</TableHead>
                   <TableHead>วันที่จอง</TableHead>
                   <TableHead>พื้นที่และพืชผล</TableHead>
+                  <TableHead>ตำแหน่งที่ตั้ง</TableHead>
                   <TableHead>ยอดมัดจำ</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead className="text-center">จัดการ</TableHead>
@@ -225,6 +226,45 @@ export default function AdminOrdersPage() {
                             <span className="font-medium">{order.area_size} ไร่</span>
                           </div>
                           <div className="text-sm text-gray-500">{order.crop_type}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {order.gps_coordinates && order.gps_coordinates.includes(',') ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-green-600 text-sm">📍 GPS</span>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const [lat, lng] = order.gps_coordinates.split(',').map(coord => coord.trim())
+                                  window.open(`https://maps.google.com/maps?q=${lat},${lng}`, '_blank')
+                                }}
+                                className="text-xs px-2 py-1"
+                              >
+                                ดูแผนที่
+                              </Button>
+                            </div>
+                          ) : order.gps_coordinates ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-blue-600 text-sm">📍 ที่อยู่</span>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  window.open(`https://maps.google.com/maps?q=${encodeURIComponent(order.gps_coordinates)}`, '_blank')
+                                }}
+                                className="text-xs px-2 py-1"
+                              >
+                                ค้นหา
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-sm">ไม่ระบุ</span>
+                          )}
+                          <div className="text-xs text-gray-400 max-w-[200px] truncate">
+                            {order.gps_coordinates || '-'}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>

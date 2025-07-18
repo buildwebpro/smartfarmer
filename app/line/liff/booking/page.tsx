@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, Calculator, CreditCard } from "lucide-react"
+import { MapPin, Calculator, CreditCard, Navigation } from "lucide-react"
 import { th } from "date-fns/locale"
 import Image from "next/image"
 
@@ -38,6 +38,7 @@ export default function BookingPage() {
     notes: "",
   })
   const [lineUserId, setLineUserId] = useState<string>("")
+  const [gettingLocation, setGettingLocation] = useState(false)
 
   const [cropTypes, setCropTypes] = useState<CropType[]>([])
   const [sprayTypes, setSprayTypes] = useState<SprayType[]>([])
@@ -52,16 +53,12 @@ export default function BookingPage() {
     // ดึงข้อมูลชนิดพืชและสารพ่นจาก API
     const fetchTypes = async () => {
       try {
-        console.log("เริ่มดึงข้อมูล crop types...")
         const cropResponse = await fetch("/api/crop-types")
         const cropResult = await cropResponse.json()
-        console.log("ข้อมูล crop types:", cropResult)
         setCropTypes(cropResult.data || [])
         
-        console.log("เริ่มดึงข้อมูล spray types...")
         const sprayResponse = await fetch("/api/spray-types")
         const sprayResult = await sprayResponse.json()
-        console.log("ข้อมูล spray types:", sprayResult)
         setSprayTypes(sprayResult.data || [])
       } catch (error) {
         console.error("Error fetching types:", error)
@@ -95,6 +92,35 @@ export default function BookingPage() {
     } else {
       setTotalPrice(0)
       setDepositAmount(0)
+    }
+  }
+
+  const handleGetLocation = async () => {
+    setGettingLocation(true)
+    try {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords
+            const gpsCoords = `${latitude}, ${longitude}`
+            setFormData({ ...formData, gpsCoordinates: gpsCoords })
+            setGettingLocation(false)
+          },
+          (error) => {
+            console.error("Error getting location:", error)
+            alert("ไม่สามารถเข้าถึงตำแหน่งได้ กรุณาเปิดใช้งาน GPS")
+            setGettingLocation(false)
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        )
+      } else {
+        alert("เบราว์เซอร์ไม่รองรับการเข้าถึงตำแหน่ง")
+        setGettingLocation(false)
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      alert("เกิดข้อผิดพลาดในการเข้าถึงตำแหน่ง")
+      setGettingLocation(false)
     }
   }
 
@@ -236,18 +262,40 @@ export default function BookingPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="gpsCoordinates">พิกัด GPS</Label>
+                  <Label htmlFor="gpsCoordinates">ที่อยู่/พิกัด GPS *</Label>
                   <div className="flex gap-2">
                     <Input
                       id="gpsCoordinates"
-                      placeholder="ระบุพิกัด GPS หรือที่อยู่"
+                      placeholder="ระบุที่อยู่ หรือพิกัด GPS"
                       value={formData.gpsCoordinates}
                       onChange={(e) => setFormData({ ...formData, gpsCoordinates: e.target.value })}
+                      className="flex-1"
                     />
-                    <Button type="button" variant="outline">
-                      <MapPin className="h-4 w-4" />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleGetLocation}
+                      disabled={gettingLocation}
+                      className="px-3"
+                      title="ใช้ตำแหน่งปัจจุบัน"
+                    >
+                      {gettingLocation ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      ) : (
+                        <Navigation className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
+                  {formData.gpsCoordinates && formData.gpsCoordinates.includes(',') && (
+                    <p className="text-sm text-green-600 mt-1">
+                      📍 พิกัด GPS ถูกบันทึกแล้ว
+                    </p>
+                  )}
+                  {formData.gpsCoordinates && !formData.gpsCoordinates.includes(',') && (
+                    <p className="text-sm text-gray-500 mt-1">
+                      📍 ที่อยู่ที่ระบุ
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
