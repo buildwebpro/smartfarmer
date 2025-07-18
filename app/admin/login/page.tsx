@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,7 +21,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, user, isLoading: authLoading } = useAuth()
+
+  // ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/admin/dashboard")
+    }
+  }, [user, authLoading, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -38,14 +45,29 @@ export default function LoginPage() {
     }
   }
 
+  // แสดง loading state ขณะตรวจสอบ authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ถ้า login แล้ว ให้แสดงหน้าเปล่าขณะ redirect
+  if (user) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-green-100 rounded-full">
-              <Zap className="h-8 w-8 text-green-600" />
-            </div>
+           <img src="/images/drone-service-login-logo.webp" alt="Drone Service Logo" className="h-16 w-auto" />
           </div>
           <CardTitle className="text-2xl font-bold">เข้าสู่ระบบ</CardTitle>
           <CardDescription>ระบบจัดการบริการพ่นยาโดรน</CardDescription>
@@ -100,13 +122,8 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            <p>บัญชีทดสอบ:</p>
-            <p>
-              <strong>Admin:</strong> admin / admin123
-            </p>
-            <p>
-              <strong>Operator:</strong> operator / op123
-            </p>
+            <p>ระบบจัดการบริการพ่นยาโดรน</p>
+            <p>เวอร์ชั่นเดโม:</p>
           </div>
         </CardContent>
       </Card>

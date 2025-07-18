@@ -1,24 +1,31 @@
+"use client"
+
 import type { ReactNode } from "react"
-import { SidebarProvider, Sidebar } from "@/components/ui/sidebar"
+import { useAuth } from "@/hooks/useAuth"
+import { ModernNavigation } from "@/components/modern-navigation"
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  return (
-    <SidebarProvider>
-      <Sidebar>
-        {/* Sidebar menu */}
-        <div className="flex flex-col h-full w-full">
-          <nav className="p-4 border-b">
-            <ul className="space-y-2">
-              <li><a href="/admin/orders" className="font-semibold">จัดการ Order</a></li>
-              <li><a href="/admin/crop-types">จัดการชนิดพืช</a></li>
-              <li><a href="/admin/spray-types">จัดการชนิดสารพ่น</a></li>
-            </ul>
-          </nav>
-        </div>
-      </Sidebar>
-      <main className="flex-1 min-h-screen bg-gray-50">
+  const { user, isLoading } = useAuth()
+
+  // ถ้ายังไม่ได้ login หรือกำลังโหลด จะไม่แสดง sidebar
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50">
         {children}
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <ModernNavigation user={user} />
+      <main className="lg:pl-72">
+        <div className="lg:pt-20">
+          <div className="px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </div>
+        </div>
       </main>
-    </SidebarProvider>
+    </div>
   )
 } 

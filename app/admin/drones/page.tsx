@@ -16,8 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Zap, User, Plus, Edit, Wrench } from "lucide-react"
-import Link from "next/link"
+import { Zap, User, Plus, Edit, Wrench, Battery, Clock, MapPin } from "lucide-react"
 
 interface DroneInfo {
   id: string
@@ -98,24 +97,16 @@ export default function DroneManagement() {
         name: "นายสมศักดิ์ บินเก่ง",
         phone: "081-111-1111",
         experience: 3,
-        certifications: ["ใบอนุญาตนักบินโดรน", "การพ่นยาเกษตร"],
+        certifications: ["ใบอนุญาตบินโดรน", "ใบรับรองพ่นยา"],
         assignedDrones: ["1"],
       },
       {
         id: "2",
         name: "นายวิชัย เก่งมาก",
-        phone: "082-222-2222",
+        phone: "081-222-2222",
         experience: 5,
-        certifications: ["ใบอนุญาตนักบินโดรน", "การพ่นยาเกษตร", "ความปลอดภัย"],
+        certifications: ["ใบอนุญาตบินโดรน", "ใบรับรองพ่นยา", "ใบรับรองซ่อมบำรุง"],
         assignedDrones: ["2"],
-      },
-      {
-        id: "3",
-        name: "นายประยุทธ์ ใจดี",
-        phone: "083-333-3333",
-        experience: 2,
-        certifications: ["ใบอนุญาตนักบินโดรน"],
-        assignedDrones: ["3"],
       },
     ]
 
@@ -125,280 +116,224 @@ export default function DroneManagement() {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      available: { label: "พร้อมใช้", variant: "default" as const, color: "text-green-600" },
-      working: { label: "กำลังทำงาน", variant: "secondary" as const, color: "text-blue-600" },
-      maintenance: { label: "บำรุงรักษา", variant: "secondary" as const, color: "text-yellow-600" },
-      repair: { label: "ซ่อมแซม", variant: "destructive" as const, color: "text-red-600" },
+      available: { label: "พร้อมใช้", variant: "default" as const, className: "bg-emerald-100 text-emerald-800" },
+      working: { label: "กำลังทำงาน", variant: "secondary" as const, className: "bg-blue-100 text-blue-800" },
+      maintenance: { label: "บำรุงรักษา", variant: "destructive" as const, className: "bg-yellow-100 text-yellow-800" },
+      repair: { label: "ซ่อมแซม", variant: "destructive" as const, className: "bg-red-100 text-red-800" },
     }
 
     const config = statusConfig[status as keyof typeof statusConfig]
-    return <Badge variant={config.variant}>{config.label}</Badge>
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>
   }
 
   const getBatteryColor = (level: number) => {
-    if (level > 60) return "text-green-600"
+    if (level > 60) return "text-emerald-600"
     if (level > 30) return "text-yellow-600"
     return "text-red-600"
   }
 
-  const updateDroneStatus = async (droneId: string, newStatus: string) => {
+  const handleStatusChange = (droneId: string, newStatus: string) => {
     setDrones(drones.map((drone) => (drone.id === droneId ? { ...drone, status: newStatus as any } : drone)))
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">จัดการโดรนและนักบิน</h1>
-            <p className="text-gray-600">จัดการโดรน นักบิน และการบำรุงรักษา</p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setIsAddingDrone(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              เพิ่มโดรน
-            </Button>
-            <Link href="/admin">
-              <Button variant="outline">กลับหน้าหลัก</Button>
-            </Link>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+            จัดการโดรน
+          </h1>
+          <p className="text-gray-600 mt-2">ข้อมูลโดรนและนักบินในระบบ</p>
         </div>
-
-        {/* Drone Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">โดรนทั้งหมด</CardTitle>
-              <Zap className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{drones.length}</div>
-              <p className="text-xs text-muted-foreground">ลำ</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">พร้อมใช้งาน</CardTitle>
-              <Zap className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                {drones.filter((d) => d.status === "available").length}
-              </div>
-              <p className="text-xs text-muted-foreground">ลำ</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">กำลังทำงาน</CardTitle>
-              <Zap className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {drones.filter((d) => d.status === "working").length}
-              </div>
-              <p className="text-xs text-muted-foreground">ลำ</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">นักบิน</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pilots.length}</div>
-              <p className="text-xs text-muted-foreground">คน</p>
-            </CardContent>
-          </Card>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setIsAddingDrone(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            เพิ่มโดรน
+          </Button>
         </div>
+      </div>
 
-        {/* Drones Table */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>รายการโดรน</CardTitle>
-            <CardDescription>จัดการและติดตามสถานะโดรนทั้งหมด</CardDescription>
+      {/* Drone Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="shadow-lg border-0 bg-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">โดรนทั้งหมด</CardTitle>
+            <div className="p-2 bg-emerald-100 rounded-lg">
+              <Zap className="h-4 w-4 text-emerald-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ชื่อโดรน</TableHead>
-                  <TableHead>รุ่น</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                  <TableHead>นักบิน</TableHead>
-                  <TableHead>แบตเตอรี่</TableHead>
-                  <TableHead>ชั่วโมงบิน</TableHead>
-                  <TableHead>ตำแหน่ง</TableHead>
-                  <TableHead>การจัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {drones.map((drone) => (
-                  <TableRow key={drone.id}>
-                    <TableCell className="font-medium">{drone.name}</TableCell>
-                    <TableCell>{drone.model}</TableCell>
-                    <TableCell>{getStatusBadge(drone.status)}</TableCell>
-                    <TableCell>{drone.assignedPilot}</TableCell>
-                    <TableCell>
-                      <span className={getBatteryColor(drone.batteryLevel)}>{drone.batteryLevel}%</span>
-                    </TableCell>
-                    <TableCell>{drone.flightHours} ชม.</TableCell>
-                    <TableCell>{drone.location}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button size="sm" variant="outline" onClick={() => setSelectedDrone(drone)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>จัดการ {selectedDrone?.name}</DialogTitle>
-                              <DialogDescription>แก้ไขข้อมูลและสถานะโดรน</DialogDescription>
-                            </DialogHeader>
-                            {selectedDrone && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>ชื่อโดรน</Label>
-                                    <Input value={selectedDrone.name} />
-                                  </div>
-                                  <div>
-                                    <Label>รุ่น</Label>
-                                    <Input value={selectedDrone.model} />
-                                  </div>
-                                  <div>
-                                    <Label>สถานะ</Label>
-                                    <Select
-                                      value={selectedDrone.status}
-                                      onValueChange={(value) => updateDroneStatus(selectedDrone.id, value)}
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="available">พร้อมใช้</SelectItem>
-                                        <SelectItem value="working">กำลังทำงาน</SelectItem>
-                                        <SelectItem value="maintenance">บำรุงรักษา</SelectItem>
-                                        <SelectItem value="repair">ซ่อมแซม</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label>นักบินที่รับผิดชอบ</Label>
-                                    <Select value={selectedDrone.assignedPilot}>
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {pilots.map((pilot) => (
-                                          <SelectItem key={pilot.id} value={pilot.name}>
-                                            {pilot.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label>ระดับแบตเตอรี่</Label>
-                                    <Input type="number" value={selectedDrone.batteryLevel} min="0" max="100" />
-                                  </div>
-                                  <div>
-                                    <Label>ชั่วโมงบิน</Label>
-                                    <Input type="number" value={selectedDrone.flightHours} />
-                                  </div>
-                                  <div>
-                                    <Label>การบำรุงรักษาครั้งล่าสุด</Label>
-                                    <Input type="date" value={selectedDrone.lastMaintenance} />
-                                  </div>
-                                  <div>
-                                    <Label>การบำรุงรักษาครั้งถัดไป</Label>
-                                    <Input type="date" value={selectedDrone.nextMaintenance} />
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label>ตำแหน่งปัจจุบัน</Label>
-                                  <Input value={selectedDrone.location} />
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button>บันทึกการเปลี่ยนแปลง</Button>
-                                  <Button variant="outline">
-                                    <Wrench className="h-4 w-4 mr-2" />
-                                    กำหนดการบำรุงรักษา
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="text-2xl font-bold">{drones.length}</div>
+            <p className="text-xs text-gray-500">ลำในระบบ</p>
           </CardContent>
         </Card>
 
-        {/* Pilots Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>รายการนักบิน</CardTitle>
-            <CardDescription>จัดการข้อมูลนักบินและการมอบหมายงาน</CardDescription>
+        <Card className="shadow-lg border-0 bg-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">พร้อมใช้งาน</CardTitle>
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Battery className="h-4 w-4 text-blue-600" />
+            </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ชื่อ</TableHead>
-                  <TableHead>เบอร์โทร</TableHead>
-                  <TableHead>ประสบการณ์</TableHead>
-                  <TableHead>ใบรับรอง</TableHead>
-                  <TableHead>โดรนที่รับผิดชอบ</TableHead>
-                  <TableHead>การจัดการ</TableHead>
+            <div className="text-2xl font-bold">{drones.filter(d => d.status === 'available').length}</div>
+            <p className="text-xs text-gray-500">ลำพร้อมใช้</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-0 bg-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">กำลังทำงาน</CardTitle>
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <Clock className="h-4 w-4 text-orange-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{drones.filter(d => d.status === 'working').length}</div>
+            <p className="text-xs text-gray-500">ลำที่ทำงาน</p>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg border-0 bg-white">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">นักบิน</CardTitle>
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <User className="h-4 w-4 text-purple-600" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{pilots.length}</div>
+            <p className="text-xs text-gray-500">คนในทีม</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Drones Table */}
+      <Card className="shadow-lg border-0 bg-white">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">รายการโดรน</CardTitle>
+          <CardDescription>จัดการและติดตามสถานะโดรนทั้งหมด</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ชื่อโดรน</TableHead>
+                <TableHead>รุ่น</TableHead>
+                <TableHead>สถานะ</TableHead>
+                <TableHead>นักบิน</TableHead>
+                <TableHead>แบตเตอรี่</TableHead>
+                <TableHead>ชั่วโมงบิน</TableHead>
+                <TableHead>สถานที่</TableHead>
+                <TableHead>การดำเนินการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {drones.map((drone) => (
+                <TableRow key={drone.id}>
+                  <TableCell className="font-medium">{drone.name}</TableCell>
+                  <TableCell>{drone.model}</TableCell>
+                  <TableCell>{getStatusBadge(drone.status)}</TableCell>
+                  <TableCell>{drone.assignedPilot}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Battery className={`h-4 w-4 ${getBatteryColor(drone.batteryLevel)}`} />
+                      <span className={getBatteryColor(drone.batteryLevel)}>
+                        {drone.batteryLevel}%
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{drone.flightHours} ชม.</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-gray-400" />
+                      <span className="text-sm">{drone.location}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedDrone(drone)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStatusChange(drone.id, 'maintenance')}
+                      >
+                        <Wrench className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pilots.map((pilot) => (
-                  <TableRow key={pilot.id}>
-                    <TableCell className="font-medium">{pilot.name}</TableCell>
-                    <TableCell>{pilot.phone}</TableCell>
-                    <TableCell>{pilot.experience} ปี</TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        {pilot.certifications.map((cert, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {cert}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Pilots Table */}
+      <Card className="shadow-lg border-0 bg-white">
+        <CardHeader>
+          <CardTitle className="text-xl font-semibold">รายการนักบิน</CardTitle>
+          <CardDescription>จัดการข้อมูลนักบินและการมอบหมายงาน</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ชื่อ</TableHead>
+                <TableHead>เบอร์โทร</TableHead>
+                <TableHead>ประสบการณ์</TableHead>
+                <TableHead>ใบรับรอง</TableHead>
+                <TableHead>โดรนที่รับผิดชอบ</TableHead>
+                <TableHead>การดำเนินการ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pilots.map((pilot) => (
+                <TableRow key={pilot.id}>
+                  <TableCell className="font-medium">{pilot.name}</TableCell>
+                  <TableCell>{pilot.phone}</TableCell>
+                  <TableCell>{pilot.experience} ปี</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {pilot.certifications.map((cert, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {cert}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
                       {pilot.assignedDrones.map((droneId) => {
-                        const drone = drones.find((d) => d.id === droneId)
+                        const drone = drones.find(d => d.id === droneId)
                         return drone ? (
-                          <Badge key={droneId} variant="outline" className="mr-1">
+                          <Badge key={droneId} variant="secondary" className="text-xs">
                             {drone.name}
                           </Badge>
                         ) : null
                       })}
-                    </TableCell>
-                    <TableCell>
-                      <Button size="sm" variant="outline">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }
