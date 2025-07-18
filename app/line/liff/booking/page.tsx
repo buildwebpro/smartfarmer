@@ -49,12 +49,23 @@ export default function BookingPage() {
 
   useEffect(() => {
     calculatePrice()
-    // ดึงข้อมูลชนิดพืชและสารพ่นจาก Supabase
+    // ดึงข้อมูลชนิดพืชและสารพ่นจาก API
     const fetchTypes = async () => {
-      const { data: crops } = await fetch("/api/crop-types").then(res => res.json())
-      setCropTypes(crops || [])
-      const { data: sprays } = await fetch("/api/spray-types").then(res => res.json())
-      setSprayTypes(sprays || [])
+      try {
+        console.log("เริ่มดึงข้อมูล crop types...")
+        const cropResponse = await fetch("/api/crop-types")
+        const cropResult = await cropResponse.json()
+        console.log("ข้อมูล crop types:", cropResult)
+        setCropTypes(cropResult.data || [])
+        
+        console.log("เริ่มดึงข้อมูล spray types...")
+        const sprayResponse = await fetch("/api/spray-types")
+        const sprayResult = await sprayResponse.json()
+        console.log("ข้อมูล spray types:", sprayResult)
+        setSprayTypes(sprayResult.data || [])
+      } catch (error) {
+        console.error("Error fetching types:", error)
+      }
     }
     fetchTypes()
     // ดึง LINE USER ID จาก LIFF SDK
@@ -198,7 +209,7 @@ export default function BookingPage() {
                       <SelectContent>
                         {cropTypes.map((crop) => (
                           <SelectItem key={crop.id} value={crop.id}>
-                            {crop.name} ({crop.pricePerRai} บาท/ไร่)
+                            {crop.name} ({crop.pricePerRai ? `${crop.pricePerRai} บาท/ไร่` : 'ไม่ระบุราคา'})
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -216,7 +227,7 @@ export default function BookingPage() {
                       <SelectContent>
                         {sprayTypes.map((spray) => (
                           <SelectItem key={spray.id} value={spray.id}>
-                            {spray.name} ({spray.pricePerRai} บาท/ไร่)
+                            {spray.name} ({spray.pricePerRai ? `${spray.pricePerRai} บาท/ไร่` : 'ไม่ระบุราคา'})
                           </SelectItem>
                         ))}
                       </SelectContent>

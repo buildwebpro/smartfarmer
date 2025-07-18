@@ -327,7 +327,7 @@ export default function AdminCropTypesPage() {
       </div>
 
       {/* Tabs for Crops and Sprays */}
-      <Tabs defaultValue="crops" className="w-full">
+      <Tabs defaultValue="crops" className="w-full mt-8 my-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="crops" className="flex items-center gap-2">
             <Wheat className="h-4 w-4" />
@@ -480,6 +480,7 @@ export default function AdminCropTypesPage() {
             </CardContent>
           </Card>
         </TabsContent>
+    
 
         {/* Sprays Tab */}
         <TabsContent value="sprays" className="space-y-4">

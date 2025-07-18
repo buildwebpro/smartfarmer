@@ -18,7 +18,9 @@ import {
   Bell,
   Search,
   Menu,
-  X
+  X,
+  Users,
+  UserCheck
 } from "lucide-react"
 
 interface NavigationItem {
@@ -26,6 +28,7 @@ interface NavigationItem {
   href: string
   icon: React.ElementType
   badge?: string
+  adminOnly?: boolean
 }
 
 const navigationItems: NavigationItem[] = [
@@ -46,9 +49,20 @@ const navigationItems: NavigationItem[] = [
     icon: Zap,
   },
   {
+    name: "จัดการนักบิน",
+    href: "/admin/pilots",
+    icon: UserCheck,
+  },
+  {
     name: "จัดการพืชและยาพ่น",
     href: "/admin/crop-types",
     icon: Wheat,
+  },
+  {
+    name: "จัดการผู้ใช้งาน",
+    href: "/admin/users",
+    icon: Users,
+    adminOnly: true
   },
   {
     name: "ตั้งค่าระบบ",
@@ -67,6 +81,9 @@ export function ModernNavigation({ user }: ModernNavProps) {
   const { logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
+  // ตรวจสอบว่าผู้ใช้เป็น admin หรือไม่
+  const isAdmin = user?.role === 'admin'
+
   const handleLogout = async () => {
     try {
       await logout()
@@ -75,6 +92,14 @@ export function ModernNavigation({ user }: ModernNavProps) {
       console.error('Logout error:', error)
     }
   }
+
+  // กรองเมนูที่แสดงตาม role ของผู้ใช้
+  const filteredNavigationItems = navigationItems.filter(item => {
+    if (item.adminOnly && !isAdmin) {
+      return false
+    }
+    return true
+  })
 
   return (
     <>
@@ -93,7 +118,7 @@ export function ModernNavigation({ user }: ModernNavProps) {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {navigationItems.map((item) => {
+                  {filteredNavigationItems.map((item) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href
                     return (
@@ -191,7 +216,7 @@ export function ModernNavigation({ user }: ModernNavProps) {
               <div className="mt-6 flow-root">
                 <div className="-my-6 divide-y divide-emerald-700">
                   <div className="space-y-2 py-6">
-                    {navigationItems.map((item) => {
+                    {filteredNavigationItems.map((item) => {
                       const Icon = item.icon
                       const isActive = pathname === item.href
                       return (

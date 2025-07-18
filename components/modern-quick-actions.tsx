@@ -10,7 +10,8 @@ import {
   Users, 
   Zap,
   FileText,
-  DollarSign
+  DollarSign,
+  UserCheck
 } from "lucide-react"
 import Link from "next/link"
 
@@ -58,6 +59,13 @@ const quickActions: QuickAction[] = [
     href: "/admin/drones",
     icon: Zap,
     color: "cyan"
+  },
+  {
+    title: "จัดการนักบิน",
+    description: "ข้อมูลนักบินและใบอนุญาต",
+    href: "/admin/pilots",
+    icon: UserCheck,
+    color: "blue"
   },
   {
     title: "ตั้งค่าราคา",
@@ -144,8 +152,8 @@ export function ModernQuickActions() {
                         <Icon className="h-6 w-6" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                        <p className="text-sm text-gray-600">{action.description}</p>
+                        <h3 className="font-bold text-slate-800 mb-1">{action.title}</h3>
+                        <p className="text-sm text-slate-600 font-medium">{action.description}</p>
                       </div>
                     </div>
                   </CardContent>
