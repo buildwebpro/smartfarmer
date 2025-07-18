@@ -46,7 +46,7 @@ const navigationItems: NavigationItem[] = [
     icon: Zap,
   },
   {
-    name: "จัดการชนิดพืช",
+    name: "จัดการพืชและยาพ่น",
     href: "/admin/crop-types",
     icon: Wheat,
   },
