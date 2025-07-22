@@ -26,31 +26,51 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "ข้อมูลไม่ครบถ้วน" }, { status: 400 })
     }
 
+    // Map string IDs to names for database storage
+    const cropTypeMap: Record<string, string> = {
+      'rice': 'ข้าว',
+      'corn': 'ข้าวโพด', 
+      'sugarcane': 'อ้อย',
+      'cassava': 'มันสำปะหลัง',
+      'rubber': 'ยางพารา'
+    }
+
+    const sprayTypeMap: Record<string, string> = {
+      'herbicide': 'ยาฆ่าหญ้า',
+      'insecticide': 'ยาฆ่าแมลง',
+      'fertilizer': 'ปุ่ยเหลว',
+      'fungicide': 'ยาฆ่าเชื้อรา'
+    }
+
     // Insert to Supabase
     const { data, error } = await supabase
       .from("bookings")
       .insert([
         {
+          booking_code: `DR${Date.now()}`, // Generate unique booking code
           customer_name: bookingData.customerName,
-          phone_number: bookingData.phoneNumber,
-          area_size: bookingData.areaSize,
-          crop_type: bookingData.cropType,
-          spray_type: bookingData.sprayType,
+          customer_phone: bookingData.phoneNumber,
+          area_size: parseFloat(bookingData.areaSize),
           gps_coordinates: bookingData.gpsCoordinates,
-          selected_date: bookingData.selectedDate,
-          notes: bookingData.notes,
+          scheduled_date: bookingData.selectedDate ? new Date(bookingData.selectedDate).toISOString().split('T')[0] : null,
+          scheduled_time: "08:00:00", // เพิ่ม default time
+          notes: `พืช: ${cropTypeMap[bookingData.cropType] || bookingData.cropType}\nสารพ่น: ${sprayTypeMap[bookingData.sprayType] || bookingData.sprayType}\n${bookingData.notes ? '\nหมายเหตุ: ' + bookingData.notes : ''}`,
           total_price: bookingData.totalPrice,
           deposit_amount: bookingData.depositAmount,
           status: "pending_payment",
-          created_at: bookingData.createdAt,
-          line_user_id: bookingData.lineUserId,
+          line_user_id: bookingData.lineUserId || null,
         },
       ])
       .select()
       .single()
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("Supabase error:", error)
+      return NextResponse.json({ 
+        error: error.message,
+        details: error.details,
+        hint: error.hint
+      }, { status: 500 })
     }
 
     return NextResponse.json({
