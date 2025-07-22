@@ -68,6 +68,7 @@ const navigationItems: NavigationItem[] = [
     name: "ตั้งค่าระบบ",
     href: "/admin/settings",
     icon: Settings,
+    adminOnly: true
   }
 ]
 

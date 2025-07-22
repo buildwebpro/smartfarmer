@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
+import { useAuth } from "@/hooks/useAuth"
 import { Wheat, Plus, Edit, Trash2, RefreshCw, Banknote, Sprout, Droplets } from "lucide-react"
 import ProtectedRoute from "@/components/protected-route"
 
@@ -26,6 +27,8 @@ interface SprayType {
 }
 
 export default function AdminCropTypesPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const [cropTypes, setCropTypes] = useState<CropType[]>([])
   const [sprayTypes, setSprayTypes] = useState<SprayType[]>([])
   const [loading, setLoading] = useState(true)
@@ -464,9 +467,11 @@ export default function AdminCropTypesPage() {
                                   <Button size="sm" variant="outline" onClick={() => handleEditCrop(crop)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
-                                  <Button size="sm" variant="destructive" onClick={() => handleDeleteCrop(crop.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  {isAdmin && (
+                                    <Button size="sm" variant="destructive" onClick={() => handleDeleteCrop(crop.id)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
                                 </>
                               )}
                             </div>
@@ -621,9 +626,11 @@ export default function AdminCropTypesPage() {
                                 <Button size="sm" variant="outline" onClick={() => handleEditSpray(spray)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleDeleteSpray(spray.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {isAdmin && (
+                                  <Button size="sm" variant="destructive" onClick={() => handleDeleteSpray(spray.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>

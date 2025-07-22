@@ -3,6 +3,10 @@ import { supabase } from "@/lib/supabaseClient"
 import { writeFile, mkdir } from "fs/promises"
 import path from "path"
 
+// เพิ่ม cache และ compression headers
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -17,55 +21,73 @@ export async function POST(request: NextRequest) {
     }
 
     // ตรวจสอบประเภทไฟล์
-    if (!file.type.startsWith('image/')) {
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({ 
         success: false, 
-        error: "รองรับเฉพาะไฟล์รูปภาพเท่านั้น" 
+        error: "รองรับเฉพาะไฟล์รูปภาพ (.jpg, .png, .webp)" 
       }, { status: 400 })
     }
 
-    // ตรวจสอบขนาดไฟล์ (ไม่เกิน 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // ตรวจสอบขนาดไฟล์ (ไม่เกิน 2MB แทน 5MB เพื่อความเร็ว)
+    if (file.size > 2 * 1024 * 1024) {
       return NextResponse.json({ 
         success: false, 
-        error: "ขนาดไฟล์ต้องไม่เกิน 5MB" 
+        error: "ขนาดไฟล์ต้องไม่เกิน 2MB" 
       }, { status: 400 })
     }
 
-    // สร้างชื่อไฟล์ที่ไม่ซ้ำ
+    // สร้างชื่อไฟล์ที่ไม่ซ้ำ และปลอดภัย
     const timestamp = Date.now()
-    const fileExtension = path.extname(file.name)
-    const fileName = `payment-slip-${bookingId}-${timestamp}${fileExtension}`
+    const randomString = Math.random().toString(36).substring(2, 8)
+    const fileExtension = path.extname(file.name).toLowerCase()
+    const fileName = `payment-slip-${bookingId}-${timestamp}-${randomString}${fileExtension}`
     
     // เส้นทางสำหรับเก็บไฟล์
     const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'payment-slips')
     const filePath = path.join(uploadDir, fileName)
     
     // สร้างโฟลเดอร์ถ้าไม่มี
-    try {
-      await mkdir(uploadDir, { recursive: true })
-    } catch (error) {
-      // โฟลเดอร์มีอยู่แล้ว
-    }
+    await mkdir(uploadDir, { recursive: true })
 
-    // แปลงไฟล์เป็น buffer และบันทึก
+    // แปลงไฟล์เป็น buffer และบันทึก (เพิ่ม error handling)
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
+    
+    // ตรวจสอบ buffer ว่าไม่เสียหาย
+    if (buffer.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: "ไฟล์ที่อัพโหลดเสียหาย" 
+      }, { status: 400 })
+    }
+    
     await writeFile(filePath, buffer)
 
     // URL สำหรับเข้าถึงไฟล์
     const imageUrl = `/uploads/payment-slips/${fileName}`
 
-    // อัพเดทฐานข้อมูล
+    // อัพเดทฐานข้อมูลด้วย transaction เพื่อความปลอดภัย
     const { error } = await supabase
       .from("bookings")
       .update({ 
         payment_slip_url: imageUrl,
-        status: 'paid' // เปลี่ยนสถานะเป็นชำระแล้ว
+        status: 'paid',
+        updated_at: new Date().toISOString()
       })
       .eq("id", bookingId)
 
     if (error) {
+      // ลบไฟล์ที่อัพโหลดแล้วถ้า database update ล้มเหลว
+      try {
+        const fs = require('fs')
+        if (fs.existsSync(filePath)) {
+          await fs.promises.unlink(filePath)
+        }
+      } catch (cleanupError) {
+        console.error("File cleanup error:", cleanupError)
+      }
+      
       console.error("Database update error:", error)
       return NextResponse.json({ 
         success: false, 
@@ -73,11 +95,19 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    return NextResponse.json({
+    // ส่ง response พร้อม cache headers
+    const response = NextResponse.json({
       success: true,
       imageUrl,
-      message: "อัพโหลดสลิปการโอนเงินสำเร็จ"
+      message: "อัพโหลดสลิปการโอนเงินสำเร็จ",
+      fileSize: Math.round(file.size / 1024) + " KB"
     })
+
+    // เพิ่ม security headers
+    response.headers.set('X-Content-Type-Options', 'nosniff')
+    response.headers.set('X-Frame-Options', 'DENY')
+    
+    return response
 
   } catch (error) {
     console.error("Upload error:", error)

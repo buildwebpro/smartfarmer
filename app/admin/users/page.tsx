@@ -27,8 +27,6 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
-  
-  // ตรวจสอบว่าผู้ใช้เป็น admin หรือไม่
   const isAdmin = user?.role === 'admin'
   
   // ถ้าไม่ใช่ admin ให้แสดงหน้า access denied
@@ -457,9 +455,11 @@ export default function AdminUsersPage() {
                                 <Button size="sm" variant="outline" onClick={() => handleEditUser(user)}>
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                                {isAdmin && (
+                                  <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </>
                             )}
                           </div>

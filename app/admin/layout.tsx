@@ -11,10 +11,18 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
+  // ✅ Debug logging เพื่อดูสถานะ
+  useEffect(() => {
+    console.log('AdminLayout - user:', user)
+    console.log('AdminLayout - isLoading:', isLoading)
+    console.log('AdminLayout - pathname:', pathname)
+  }, [user, isLoading, pathname])
+
   // ✅ ตรวจสอบการล็อคอิน และ redirect ถ้าไม่ได้ล็อคอิน (ยกเว้นหน้า login)
   useEffect(() => {
     if (!isLoading && !user && !pathname.includes('/login')) {
-      router.push("/admin/login")
+      console.log('AdminLayout - Redirecting to login')
+      router.replace("/admin/login") // ใช้ replace แทน push
     }
   }, [user, isLoading, router, pathname])
 
@@ -27,7 +35,17 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     )
   }
 
-  // ถ้ายังไม่ได้ login หรือกำลังโหลด
+  // ถ้ายังไม่ได้ login หรือกำลังโหลด ให้แสดง loading screen
+  if (isLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+        </div>
+      </div>
+    )
+  }
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">

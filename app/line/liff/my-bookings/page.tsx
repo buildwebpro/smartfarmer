@@ -51,16 +51,14 @@ export default function BookingStatusPage() {
           }
         } catch (error) {
           console.error("LIFF initialization failed:", error)
-          // สำหรับ testing ใช้ mock user id
-          const mockUserId = "test-user-id"
-          setLineUserId(mockUserId)
-          fetchUserBookings(mockUserId)
+          // ใน production ให้ redirect ไปยังหน้า error
+          window.location.href = "/error"
         }
       } else {
-        // สำหรับ testing ใช้ mock user id
-        const mockUserId = "test-user-id"
-        setLineUserId(mockUserId)
-        fetchUserBookings(mockUserId)
+        // ไม่ใช่ environment ที่มี LIFF
+        const fallbackUserId = "anonymous-user"
+        setLineUserId(fallbackUserId)
+        fetchUserBookings(fallbackUserId)
       }
     }
 

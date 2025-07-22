@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useAuth } from "@/hooks/useAuth"
 import { Zap, User, Plus, Edit, Wrench, Battery, Clock, MapPin, Trash2 } from "lucide-react"
 
 interface DroneInfo {
@@ -397,6 +398,8 @@ function AddDroneForm({ pilots, onSave, onCancel }: AddDroneFormProps) {
 }
 
 export default function DronesPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const [drones, setDrones] = useState<DroneInfo[]>([])
   const [pilots, setPilots] = useState<PilotInfo[]>([])
   const [selectedDrone, setSelectedDrone] = useState<DroneInfo | null>(null)
@@ -660,14 +663,16 @@ export default function DronesPage() {
                       >
                         <Wrench className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteDrone(drone.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteDrone(drone.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

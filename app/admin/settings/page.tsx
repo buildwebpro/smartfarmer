@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,48 +17,96 @@ import {
   Database, 
   Palette,
   Globe,
-  Save
+  Save,
+  Loader2
 } from "lucide-react"
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState({
     // General Settings
-    siteName: "Drone Booking Service",
-    siteDescription: "บริการจองโดรนพ่นยาเกษตร",
-    contactEmail: "admin@dronebooking.com",
-    contactPhone: "02-123-4567",
+    site_name: "Drone Booking Service",
+    site_description: "บริการจองโดรนพ่นยาเกษตร",
+    contact_email: "admin@dronebooking.com",
+    contact_phone: "02-123-4567",
     
     // Notification Settings
-    emailNotifications: true,
-    smsNotifications: false,
-    pushNotifications: true,
+    email_notifications: true,
+    sms_notifications: false,
+    push_notifications: true,
     
     // System Settings
-    maxBookingsPerDay: 10,
-    bookingTimeSlots: 8,
-    defaultDeposit: 1000,
+    max_bookings_per_day: 10,
+    booking_time_slots: 8,
+    default_deposit: 1000,
+    default_language: "th",
     
     // Theme Settings
-    primaryColor: "emerald",
-    darkMode: false,
-    
-    // Language Settings
-    defaultLanguage: "th",
+    primary_color: "emerald",
+    dark_mode: false,
     
     // Security Settings
-    sessionTimeout: 30,
-    requireTwoFactor: false,
-    passwordExpiry: 90
+    session_timeout: 30,
+    require_two_factor: false,
+    password_expiry: 90
   })
 
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/settings')
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          setSettings(prevSettings => ({
+            ...prevSettings,
+            ...result.data
+          }))
+        }
+      } else {
+        console.error('Failed to fetch settings')
+      }
+    } catch (error) {
+      console.error('Error fetching settings:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSave = async () => {
     setIsSaving(true)
-    // Simulate saving
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsSaving(false)
-    alert('บันทึกการตั้งค่าเรียบร้อยแล้ว')
+    try {
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ settings }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          alert('บันทึกการตั้งค่าเรียบร้อยแล้ว')
+        } else {
+          alert('เกิดข้อผิดพลาดในการบันทึก: ' + result.error)
+        }
+      } else {
+        alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า')
+      }
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      alert('เกิดข้อผิดพลาดในการบันทึกการตั้งค่า')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const handleInputChange = (key: string, value: any) => {
@@ -70,31 +118,38 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
-            ตั้งค่าระบบ
-          </h1>
-          <p className="text-gray-600 mt-2">จัดการการตั้งค่าระบบและการกำหนดค่าต่างๆ</p>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+          <span className="ml-2 text-gray-600">กำลังโหลดการตั้งค่า...</span>
         </div>
-        <Button 
-          onClick={handleSave}
-          disabled={isSaving}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-        >
-          {isSaving ? (
-            <>
-              <Save className="h-4 w-4 mr-2 animate-spin" />
-              กำลังบันทึก...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4 mr-2" />
-              บันทึกการตั้งค่า
-            </>
-          )}
-        </Button>
-      </div>
+      ) : (
+        <>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-emerald-800 bg-clip-text text-transparent">
+                ตั้งค่าระบบ
+              </h1>
+              <p className="text-gray-600 mt-2">จัดการการตั้งค่าระบบและการกำหนดค่าต่างๆ</p>
+            </div>
+            <Button 
+              onClick={handleSave}
+              disabled={isSaving}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  กำลังบันทึก...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  บันทึกการตั้งค่า
+                </>
+              )}
+            </Button>
+          </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* General Settings */}
@@ -111,16 +166,16 @@ export default function AdminSettingsPage() {
               <Label htmlFor="siteName">ชื่อเว็บไซต์</Label>
               <Input
                 id="siteName"
-                value={settings.siteName}
-                onChange={(e) => handleInputChange('siteName', e.target.value)}
+                value={settings.site_name}
+                onChange={(e) => handleInputChange('site_name', e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="siteDescription">คำอธิบายเว็บไซต์</Label>
               <Textarea
                 id="siteDescription"
-                value={settings.siteDescription}
-                onChange={(e) => handleInputChange('siteDescription', e.target.value)}
+                value={settings.site_description}
+                onChange={(e) => handleInputChange('site_description', e.target.value)}
                 rows={3}
               />
             </div>
@@ -129,16 +184,16 @@ export default function AdminSettingsPage() {
               <Input
                 id="contactEmail"
                 type="email"
-                value={settings.contactEmail}
-                onChange={(e) => handleInputChange('contactEmail', e.target.value)}
+                value={settings.contact_email}
+                onChange={(e) => handleInputChange('contact_email', e.target.value)}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contactPhone">เบอร์โทรติดต่อ</Label>
               <Input
                 id="contactPhone"
-                value={settings.contactPhone}
-                onChange={(e) => handleInputChange('contactPhone', e.target.value)}
+                value={settings.contact_phone}
+                onChange={(e) => handleInputChange('contact_phone', e.target.value)}
               />
             </div>
           </CardContent>
@@ -160,8 +215,8 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-gray-500">รับการแจ้งเตือนผ่านอีเมล</p>
               </div>
               <Switch
-                checked={settings.emailNotifications}
-                onCheckedChange={(checked) => handleInputChange('emailNotifications', checked)}
+                checked={settings.email_notifications}
+                onCheckedChange={(checked) => handleInputChange('email_notifications', checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -170,8 +225,8 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-gray-500">รับการแจ้งเตือนผ่าน SMS</p>
               </div>
               <Switch
-                checked={settings.smsNotifications}
-                onCheckedChange={(checked) => handleInputChange('smsNotifications', checked)}
+                checked={settings.sms_notifications}
+                onCheckedChange={(checked) => handleInputChange('sms_notifications', checked)}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -180,8 +235,8 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-gray-500">รับการแจ้งเตือนแบบ Push</p>
               </div>
               <Switch
-                checked={settings.pushNotifications}
-                onCheckedChange={(checked) => handleInputChange('pushNotifications', checked)}
+                checked={settings.push_notifications}
+                onCheckedChange={(checked) => handleInputChange('push_notifications', checked)}
               />
             </div>
           </CardContent>
@@ -202,8 +257,8 @@ export default function AdminSettingsPage() {
               <Input
                 id="maxBookings"
                 type="number"
-                value={settings.maxBookingsPerDay}
-                onChange={(e) => handleInputChange('maxBookingsPerDay', parseInt(e.target.value))}
+                value={settings.max_bookings_per_day}
+                onChange={(e) => handleInputChange('max_bookings_per_day', parseInt(e.target.value))}
               />
             </div>
             <div className="space-y-2">
@@ -211,8 +266,8 @@ export default function AdminSettingsPage() {
               <Input
                 id="timeSlots"
                 type="number"
-                value={settings.bookingTimeSlots}
-                onChange={(e) => handleInputChange('bookingTimeSlots', parseInt(e.target.value))}
+                value={settings.booking_time_slots}
+                onChange={(e) => handleInputChange('booking_time_slots', parseInt(e.target.value))}
               />
             </div>
             <div className="space-y-2">
@@ -220,13 +275,13 @@ export default function AdminSettingsPage() {
               <Input
                 id="defaultDeposit"
                 type="number"
-                value={settings.defaultDeposit}
-                onChange={(e) => handleInputChange('defaultDeposit', parseInt(e.target.value))}
+                value={settings.default_deposit}
+                onChange={(e) => handleInputChange('default_deposit', parseInt(e.target.value))}
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="defaultLanguage">ภาษาเริ่มต้น</Label>
-              <Select value={settings.defaultLanguage} onValueChange={(value) => handleInputChange('defaultLanguage', value)}>
+              <Select value={settings.default_language} onValueChange={(value) => handleInputChange('default_language', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -251,7 +306,7 @@ export default function AdminSettingsPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="primaryColor">สีหลักของธีม</Label>
-              <Select value={settings.primaryColor} onValueChange={(value) => handleInputChange('primaryColor', value)}>
+              <Select value={settings.primary_color} onValueChange={(value) => handleInputChange('primary_color', value)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -269,8 +324,8 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-gray-500">เปิดใช้งานโหมดมืด</p>
               </div>
               <Switch
-                checked={settings.darkMode}
-                onCheckedChange={(checked) => handleInputChange('darkMode', checked)}
+                checked={settings.dark_mode}
+                onCheckedChange={(checked) => handleInputChange('dark_mode', checked)}
               />
             </div>
             <div className="space-y-2">
@@ -278,8 +333,8 @@ export default function AdminSettingsPage() {
               <Input
                 id="sessionTimeout"
                 type="number"
-                value={settings.sessionTimeout}
-                onChange={(e) => handleInputChange('sessionTimeout', parseInt(e.target.value))}
+                value={settings.session_timeout}
+                onChange={(e) => handleInputChange('session_timeout', parseInt(e.target.value))}
               />
             </div>
             <div className="flex items-center justify-between">
@@ -288,8 +343,8 @@ export default function AdminSettingsPage() {
                 <p className="text-sm text-gray-500">เปิดใช้งาน 2FA</p>
               </div>
               <Switch
-                checked={settings.requireTwoFactor}
-                onCheckedChange={(checked) => handleInputChange('requireTwoFactor', checked)}
+                checked={settings.require_two_factor}
+                onCheckedChange={(checked) => handleInputChange('require_two_factor', checked)}
               />
             </div>
             <div className="space-y-2">
@@ -297,13 +352,15 @@ export default function AdminSettingsPage() {
               <Input
                 id="passwordExpiry"
                 type="number"
-                value={settings.passwordExpiry}
-                onChange={(e) => handleInputChange('passwordExpiry', parseInt(e.target.value))}
+                value={settings.password_expiry}
+                onChange={(e) => handleInputChange('password_expiry', parseInt(e.target.value))}
               />
             </div>
           </CardContent>
         </Card>
       </div>
+        </>
+      )}
     </div>
   )
 }

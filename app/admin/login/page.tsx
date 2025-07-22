@@ -25,41 +25,45 @@ export default function LoginPage() {
 
   // ✅ ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard (แค่ตรวจสอบ user เท่านั้น)
   useEffect(() => {
+    console.log('LoginPage - user:', user)
+    console.log('LoginPage - isLoading (auth):', authLoading)
     if (user) {
-      router.push("/admin")
+      console.log('LoginPage - User found, redirecting to /admin')
+      // ใช้ replace แทน push เพื่อไม่ให้กลับมาหน้า login ได้
+      router.replace("/admin")
     }
-  }, [user, router])
+  }, [user, router, authLoading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('LoginPage - handleSubmit started')
     setIsLoading(true)
     setError("")
 
     try {
+      console.log('LoginPage - calling login with:', formData.email)
       await login(formData.email, formData.password)
-      router.push("/admin")
+      console.log('LoginPage - login call completed successfully')
+      // ลบ router.push ออกเพราะมี useEffect จัดการแล้ว
     } catch (err: any) {
+      console.log('LoginPage - login error:', err)
       setError(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ")
     } finally {
+      console.log('LoginPage - setting isLoading to false')
       setIsLoading(false)
     }
   }
 
-  // ✅ ลบการตรวจสอบ authLoading ออก เพื่อให้หน้า login โหลดเร็ว
-  // if (authLoading) {
-  //   return (
-  //     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-  //       <div className="text-center">
-  //         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-  //         <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
-  //       </div>
-  //     </div>
-  //   )
-  // }
-
-  // ถ้า login แล้ว ให้แสดงหน้าเปล่าขณะ redirect
+  // ถ้า login แล้ว ให้แสดง loading แทนหน้าเปล่า
   if (user) {
-    return null
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังเข้าสู่ระบบ...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

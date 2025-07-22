@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAuth } from "@/hooks/useAuth"
 import { Plus, Search, Trash2, Edit, MapPin, Phone, Mail, Calendar, Star, AlertTriangle, Trophy, Clock, Shield, Users, Gauge, RefreshCw, User, UserCheck, Award } from "lucide-react"
 import ProtectedRoute from "@/components/protected-route"
 
@@ -53,6 +54,8 @@ interface Pilot {
 }
 
 export default function AdminPilotsPage() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'admin'
   const [pilots, setPilots] = useState<Pilot[]>([])
   const [loading, setLoading] = useState(true)
   
@@ -801,13 +804,15 @@ export default function AdminPilotsPage() {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeletePilot(pilot.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isAdmin && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeletePilot(pilot.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
