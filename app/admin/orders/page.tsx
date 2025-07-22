@@ -12,31 +12,90 @@ import ProtectedRoute from "@/components/protected-route"
 
 interface Order {
   id: string
+  booking_code: string
   customer_name: string
-  phone_number: string
-  area_size: string
-  crop_type: string
-  spray_type: string
+  customer_phone: string
+  area_size: number
   gps_coordinates: string
-  selected_date: string | null
+  scheduled_date: string | null
+  scheduled_time: string | null
   notes: string
   total_price: number
   deposit_amount: number
   status: string
   created_at: string
   line_user_id: string
+  payment_slip_url?: string
 }
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [cropTypes, setCropTypes] = useState<{[key: string]: string}>({})
+  const [sprayTypes, setSprayTypes] = useState<{[key: string]: string}>({})
 
   const fetchOrders = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from("bookings").select("*").order("created_at", { ascending: false })
-    if (!error && data) setOrders(data as Order[])
+    
+    // Fetch orders, crop types, and spray types
+    const [ordersResult, cropTypesResponse, sprayTypesResponse] = await Promise.all([
+      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      fetch('/api/crop-types'),
+      fetch('/api/spray-types')
+    ])
+    
+    if (!ordersResult.error && ordersResult.data) {
+      setOrders(ordersResult.data as Order[])
+    }
+    
+    // Process crop types
+    if (cropTypesResponse.ok) {
+      const cropData = await cropTypesResponse.json()
+      if (cropData.data) {
+        const cropMap: {[key: string]: string} = {}
+        cropData.data.forEach((crop: any) => {
+          cropMap[crop.id] = crop.name
+        })
+        setCropTypes(cropMap)
+      }
+    }
+    
+    // Process spray types
+    if (sprayTypesResponse.ok) {
+      const sprayData = await sprayTypesResponse.json()
+      if (sprayData.data) {
+        const sprayMap: {[key: string]: string} = {}
+        sprayData.data.forEach((spray: any) => {
+          sprayMap[spray.id] = spray.name
+        })
+        setSprayTypes(sprayMap)
+      }
+    }
+    
     setLoading(false)
+  }
+
+  // Helper function to parse crop and spray info from notes
+  const parseCropSprayInfo = (notes: string) => {
+    if (!notes) return { cropName: 'ไม่ระบุ', sprayName: 'ไม่ระบุ' }
+    
+    const lines = notes.split('\n')
+    let cropId = '', sprayId = ''
+    
+    lines.forEach(line => {
+      if (line.includes('พืช:')) {
+        cropId = line.replace('พืช: ', '').trim()
+      }
+      if (line.includes('สารพ่น:')) {
+        sprayId = line.replace('สารพ่น: ', '').trim()
+      }
+    })
+    
+    const cropName = cropTypes[cropId] || cropId || 'ไม่ระบุ'
+    const sprayName = sprayTypes[sprayId] || sprayId || 'ไม่ระบุ'
+    
+    return { cropName, sprayName }
   }
 
   useEffect(() => {
@@ -185,6 +244,7 @@ export default function AdminOrdersPage() {
                   <TableHead>พื้นที่และพืชผล</TableHead>
                   <TableHead>ตำแหน่งที่ตั้ง</TableHead>
                   <TableHead>ยอดมัดจำ</TableHead>
+                  <TableHead>สลิปการโอน</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead className="text-center">จัดการ</TableHead>
                 </TableRow>
@@ -192,7 +252,7 @@ export default function AdminOrdersPage() {
               <TableBody>
                 {orders.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">
+                    <TableCell colSpan={9} className="text-center py-8">
                       <div className="flex flex-col items-center gap-2">
                         <ShoppingCart className="h-12 w-12 text-gray-300" />
                         <p className="text-gray-400">ไม่พบข้อมูลออร์เดอร์</p>
@@ -210,14 +270,14 @@ export default function AdminOrdersPage() {
                             <span className="font-medium">{order.customer_name}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <span>📱 {order.phone_number}</span>
+                            <span>📱 {order.customer_phone}</span>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          <span>{order.selected_date ? new Date(order.selected_date).toLocaleDateString("th-TH") : "ยังไม่กำหนด"}</span>
+                          <span>{order.scheduled_date ? new Date(order.scheduled_date).toLocaleDateString("th-TH") : "ยังไม่กำหนด"}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -226,7 +286,17 @@ export default function AdminOrdersPage() {
                             <MapPin className="h-4 w-4 text-gray-400" />
                             <span className="font-medium">{order.area_size} ไร่</span>
                           </div>
-                          <div className="text-sm text-gray-500">{order.crop_type}</div>
+                          <div className="text-sm text-gray-500">
+                            {(() => {
+                              const { cropName, sprayName } = parseCropSprayInfo(order.notes)
+                              return (
+                                <div className="flex flex-col gap-1">
+                                  <span>🌾 {cropName}</span>
+                                  <span>💧 {sprayName}</span>
+                                </div>
+                              )
+                            })()}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -273,6 +343,27 @@ export default function AdminOrdersPage() {
                           <Banknote className="h-4 w-4 text-green-600" />
                           <span className="font-semibold text-green-700">{order.deposit_amount?.toLocaleString()} บาท</span>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        {order.payment_slip_url ? (
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(order.payment_slip_url, '_blank')}
+                              className="text-xs"
+                            >
+                              ดูสลิป
+                            </Button>
+                            <Badge className="bg-green-100 text-green-800 text-xs">
+                              มีสลิป
+                            </Badge>
+                          </div>
+                        ) : (
+                          <Badge className="bg-gray-100 text-gray-800 text-xs">
+                            ยังไม่มีสลิป
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>{getStatusBadge(order.status)}</TableCell>
                       <TableCell className="text-center">

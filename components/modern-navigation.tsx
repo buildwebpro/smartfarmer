@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
@@ -27,7 +27,7 @@ interface NavigationItem {
   name: string
   href: string
   icon: React.ElementType
-  badge?: string
+  badgeKey?: string
   adminOnly?: boolean
 }
 
@@ -41,7 +41,7 @@ const navigationItems: NavigationItem[] = [
     name: "จัดการออร์เดอร์",
     href: "/admin/orders",
     icon: ShoppingCart,
-    badge: "12"
+    badgeKey: "orders"
   },
   {
     name: "จัดการโดรน",
@@ -80,9 +80,29 @@ export function ModernNavigation({ user }: ModernNavProps) {
   const router = useRouter()
   const { logout } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [badges, setBadges] = useState<Record<string, string>>({})
 
   // ตรวจสอบว่าผู้ใช้เป็น admin หรือไม่
   const isAdmin = user?.role === 'admin'
+
+  // ดึงข้อมูลสำหรับ badge
+  useEffect(() => {
+    const fetchBadgeData = async () => {
+      try {
+        // ดึงข้อมูลออเดอร์
+        const ordersResponse = await fetch('/api/bookings')
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json()
+          const ordersCount = ordersData.data?.length || 0
+          setBadges(prev => ({ ...prev, orders: ordersCount.toString() }))
+        }
+      } catch (error) {
+        console.error('Error fetching badge data:', error)
+      }
+    }
+
+    fetchBadgeData()
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -134,12 +154,12 @@ export function ModernNavigation({ user }: ModernNavProps) {
                         >
                           <Icon className="h-6 w-6 shrink-0" />
                           {item.name}
-                          {item.badge && (
+                          {item.badgeKey && badges[item.badgeKey] && (
                             <Badge 
                               variant="secondary" 
                               className="ml-auto bg-emerald-600 text-white hover:bg-emerald-600"
                             >
-                              {item.badge}
+                              {badges[item.badgeKey]}
                             </Badge>
                           )}
                         </Link>
@@ -233,12 +253,12 @@ export function ModernNavigation({ user }: ModernNavProps) {
                         >
                           <Icon className="h-6 w-6 shrink-0" />
                           {item.name}
-                          {item.badge && (
+                          {item.badgeKey && badges[item.badgeKey] && (
                             <Badge 
                               variant="secondary" 
                               className="ml-auto bg-emerald-600 text-white"
                             >
-                              {item.badge}
+                              {badges[item.badgeKey]}
                             </Badge>
                           )}
                         </Link>

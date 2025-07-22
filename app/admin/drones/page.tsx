@@ -4,9 +4,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Dialog,
@@ -14,24 +11,24 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Zap, User, Plus, Edit, Wrench, Battery, Clock, MapPin } from "lucide-react"
+import { Zap, User, Plus, Edit, Wrench, Battery, Clock, MapPin, Trash2 } from "lucide-react"
 
 interface DroneInfo {
   id: string
   name: string
   model: string
   status: "available" | "working" | "maintenance" | "repair"
-  assignedPilot: string
+  assignedPilot: string | null
+  assignedPilotId?: string | null
   batteryLevel: number
   flightHours: number
-  lastMaintenance: string
-  nextMaintenance: string
+  lastMaintenance: string | null
+  nextMaintenance: string | null
   location: string
 }
 
-interface Pilot {
+interface PilotInfo {
   id: string
   name: string
   phone: string
@@ -40,78 +37,424 @@ interface Pilot {
   assignedDrones: string[]
 }
 
-export default function DroneManagement() {
+interface EditDroneFormProps {
+  drone: DroneInfo
+  pilots: PilotInfo[]
+  onSave: (drone: DroneInfo) => void
+  onCancel: () => void
+}
+
+interface AddDroneFormProps {
+  pilots: PilotInfo[]
+  onSave: (drone: DroneInfo) => void
+  onCancel: () => void
+}
+
+function EditDroneForm({ drone, pilots, onSave, onCancel }: EditDroneFormProps) {
+  const [formData, setFormData] = useState({
+    name: drone.name,
+    model: drone.model,
+    status: drone.status,
+    assignedPilotId: drone.assignedPilotId || '',
+    batteryLevel: drone.batteryLevel,
+    flightHours: drone.flightHours,
+    location: drone.location,
+    lastMaintenance: drone.lastMaintenance || '',
+    nextMaintenance: drone.nextMaintenance || ''
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      const response = await fetch('/api/drones', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: drone.id,
+          ...formData,
+          assignedPilotId: formData.assignedPilotId || null
+        }),
+      })
+
+      if (response.ok) {
+        const updatedDrone: DroneInfo = {
+          ...drone,
+          ...formData,
+          assignedPilot: formData.assignedPilotId 
+            ? pilots.find(p => p.id === formData.assignedPilotId)?.name || null 
+            : null
+        }
+        onSave(updatedDrone)
+      } else {
+        console.error('Failed to update drone')
+      }
+    } catch (error) {
+      console.error('Error updating drone:', error)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">ชื่อโดรน</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">รุ่น</label>
+          <input
+            type="text"
+            value={formData.model}
+            onChange={(e) => setFormData({...formData, model: e.target.value})}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">สถานะ</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="available">พร้อมใช้</option>
+            <option value="working">กำลังทำงาน</option>
+            <option value="maintenance">บำรุงรักษา</option>
+            <option value="repair">ซ่อมแซม</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">นักบิน</label>
+          <select
+            value={formData.assignedPilotId}
+            onChange={(e) => setFormData({...formData, assignedPilotId: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="">ไม่ระบุ</option>
+            {pilots.map((pilot) => (
+              <option key={pilot.id} value={pilot.id}>
+                {pilot.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">แบตเตอรี่ (%)</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={formData.batteryLevel}
+            onChange={(e) => setFormData({...formData, batteryLevel: parseInt(e.target.value)})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">ชั่วโมงบิน</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.flightHours}
+            onChange={(e) => setFormData({...formData, flightHours: parseInt(e.target.value)})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">สถานที่</label>
+        <input
+          type="text"
+          value={formData.location}
+          onChange={(e) => setFormData({...formData, location: e.target.value})}
+          className="w-full p-2 border rounded-md"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">บำรุงรักษาครั้งล่าสุด</label>
+          <input
+            type="date"
+            value={formData.lastMaintenance}
+            onChange={(e) => setFormData({...formData, lastMaintenance: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">บำรุงรักษาครั้งถัดไป</label>
+          <input
+            type="date"
+            value={formData.nextMaintenance}
+            onChange={(e) => setFormData({...formData, nextMaintenance: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          ยกเลิก
+        </Button>
+        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+          บันทึก
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function AddDroneForm({ pilots, onSave, onCancel }: AddDroneFormProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    model: '',
+    status: 'available' as const,
+    assignedPilotId: '',
+    batteryLevel: 100,
+    flightHours: 0,
+    location: 'ฐานหลัก',
+    lastMaintenance: '',
+    nextMaintenance: ''
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    try {
+      const response = await fetch('/api/drones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...formData,
+          assignedPilotId: formData.assignedPilotId || null
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        const newDrone: DroneInfo = {
+          id: result.data.id.toString(),
+          name: formData.name,
+          model: formData.model,
+          status: formData.status,
+          assignedPilot: formData.assignedPilotId 
+            ? pilots.find(p => p.id === formData.assignedPilotId)?.name || null 
+            : null,
+          assignedPilotId: formData.assignedPilotId || null,
+          batteryLevel: formData.batteryLevel,
+          flightHours: formData.flightHours,
+          location: formData.location,
+          lastMaintenance: formData.lastMaintenance || null,
+          nextMaintenance: formData.nextMaintenance || null
+        }
+        onSave(newDrone)
+      } else {
+        console.error('Failed to add drone')
+      }
+    } catch (error) {
+      console.error('Error adding drone:', error)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">ชื่อโดรน *</label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">รุ่น *</label>
+          <input
+            type="text"
+            value={formData.model}
+            onChange={(e) => setFormData({...formData, model: e.target.value})}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">สถานะ</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="available">พร้อมใช้</option>
+            <option value="working">กำลังทำงาน</option>
+            <option value="maintenance">บำรุงรักษา</option>
+            <option value="repair">ซ่อมแซม</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">นักบิน</label>
+          <select
+            value={formData.assignedPilotId}
+            onChange={(e) => setFormData({...formData, assignedPilotId: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          >
+            <option value="">ไม่ระบุ</option>
+            {pilots.map((pilot) => (
+              <option key={pilot.id} value={pilot.id}>
+                {pilot.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">แบตเตอรี่ (%)</label>
+          <input
+            type="number"
+            min="0"
+            max="100"
+            value={formData.batteryLevel}
+            onChange={(e) => setFormData({...formData, batteryLevel: parseInt(e.target.value)})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">ชั่วโมงบิน</label>
+          <input
+            type="number"
+            min="0"
+            value={formData.flightHours}
+            onChange={(e) => setFormData({...formData, flightHours: parseInt(e.target.value)})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">สถานที่</label>
+        <input
+          type="text"
+          value={formData.location}
+          onChange={(e) => setFormData({...formData, location: e.target.value})}
+          className="w-full p-2 border rounded-md"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium mb-1">บำรุงรักษาครั้งล่าสุด</label>
+          <input
+            type="date"
+            value={formData.lastMaintenance}
+            onChange={(e) => setFormData({...formData, lastMaintenance: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">บำรุงรักษาครั้งถัดไป</label>
+          <input
+            type="date"
+            value={formData.nextMaintenance}
+            onChange={(e) => setFormData({...formData, nextMaintenance: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          ยกเลิก
+        </Button>
+        <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700">
+          เพิ่มโดรน
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+export default function DronesPage() {
   const [drones, setDrones] = useState<DroneInfo[]>([])
-  const [pilots, setPilots] = useState<Pilot[]>([])
+  const [pilots, setPilots] = useState<PilotInfo[]>([])
   const [selectedDrone, setSelectedDrone] = useState<DroneInfo | null>(null)
   const [isAddingDrone, setIsAddingDrone] = useState(false)
+  const [editingDrone, setEditingDrone] = useState<DroneInfo | null>(null)
+  const [isEditingDrone, setIsEditingDrone] = useState(false)
 
   useEffect(() => {
     fetchDronesAndPilots()
   }, [])
 
   const fetchDronesAndPilots = async () => {
-    // Mock data for demonstration
-    const mockDrones: DroneInfo[] = [
-      {
-        id: "1",
-        name: "โดรน #1",
-        model: "DJI Agras T30",
-        status: "available",
-        assignedPilot: "นายสมศักดิ์ บินเก่ง",
-        batteryLevel: 85,
-        flightHours: 245,
-        lastMaintenance: "2024-01-15",
-        nextMaintenance: "2024-02-15",
-        location: "ฐานหลัก",
-      },
-      {
-        id: "2",
-        name: "โดรน #2",
-        model: "DJI Agras T30",
-        status: "working",
-        assignedPilot: "นายวิชัย เก่งมาก",
-        batteryLevel: 45,
-        flightHours: 189,
-        lastMaintenance: "2024-01-10",
-        nextMaintenance: "2024-02-10",
-        location: "สวนทุเรียน นครปฐม",
-      },
-      {
-        id: "3",
-        name: "โดรน #3",
-        model: "DJI Agras T20",
-        status: "maintenance",
-        assignedPilot: "นายประยุทธ์ ใจดี",
-        batteryLevel: 0,
-        flightHours: 312,
-        lastMaintenance: "2024-01-18",
-        nextMaintenance: "2024-01-20",
-        location: "ศูนย์บำรุงรักษา",
-      },
-    ]
+    try {
+      // Fetch drones and pilots from APIs
+      const [dronesResponse, pilotsResponse] = await Promise.all([
+        fetch('/api/drones'),
+        fetch('/api/pilots')
+      ])
 
-    const mockPilots: Pilot[] = [
-      {
-        id: "1",
-        name: "นายสมศักดิ์ บินเก่ง",
-        phone: "081-111-1111",
-        experience: 3,
-        certifications: ["ใบอนุญาตบินโดรน", "ใบรับรองพ่นยา"],
-        assignedDrones: ["1"],
-      },
-      {
-        id: "2",
-        name: "นายวิชัย เก่งมาก",
-        phone: "081-222-2222",
-        experience: 5,
-        certifications: ["ใบอนุญาตบินโดรน", "ใบรับรองพ่นยา", "ใบรับรองซ่อมบำรุง"],
-        assignedDrones: ["2"],
-      },
-    ]
+      if (dronesResponse.ok) {
+        const dronesData = await dronesResponse.json()
+        if (dronesData.data) {
+          const transformedDrones = dronesData.data.map((drone: any) => ({
+            id: drone.id.toString(),
+            name: drone.name,
+            model: drone.model,
+            status: drone.status || "available",
+            assignedPilot: drone.assignedPilot || "ยังไม่ได้มอบหมาย",
+            assignedPilotId: drone.assignedPilotId,
+            batteryLevel: drone.batteryLevel || 0,
+            flightHours: drone.flightHours || 0,
+            lastMaintenance: drone.lastMaintenance || null,
+            nextMaintenance: drone.nextMaintenance || null,
+            location: drone.location || "ไม่ทราบตำแหน่ง",
+          }))
+          setDrones(transformedDrones)
+        }
+      }
 
-    setDrones(mockDrones)
-    setPilots(mockPilots)
+      if (pilotsResponse.ok) {
+        const pilotsData = await pilotsResponse.json()
+        if (pilotsData.data) {
+          const transformedPilots = pilotsData.data.map((pilot: any) => ({
+            id: pilot.id.toString(),
+            name: pilot.name,
+            phone: pilot.phone,
+            experience: pilot.experience_years || 0,
+            certifications: pilot.certifications || [],
+            assignedDrones: [],
+          }))
+          setPilots(transformedPilots)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error)
+      setDrones([])
+      setPilots([])
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -122,7 +465,7 @@ export default function DroneManagement() {
       repair: { label: "ซ่อมแซม", variant: "destructive" as const, className: "bg-red-100 text-red-800" },
     }
 
-    const config = statusConfig[status as keyof typeof statusConfig]
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.available
     return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>
   }
 
@@ -132,8 +475,53 @@ export default function DroneManagement() {
     return "text-red-600"
   }
 
-  const handleStatusChange = (droneId: string, newStatus: string) => {
-    setDrones(drones.map((drone) => (drone.id === droneId ? { ...drone, status: newStatus as any } : drone)))
+  const handleStatusChange = async (droneId: string, newStatus: string) => {
+    try {
+      const response = await fetch('/api/drones', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: droneId,
+          status: newStatus
+        }),
+      })
+
+      if (response.ok) {
+        setDrones(drones.map((drone) => 
+          drone.id === droneId ? { ...drone, status: newStatus as any } : drone
+        ))
+      } else {
+        console.error('Failed to update drone status')
+      }
+    } catch (error) {
+      console.error('Error updating drone status:', error)
+    }
+  }
+
+  const handleDeleteDrone = async (droneId: string) => {
+    if (!confirm('คุณแน่ใจว่าต้องการลบโดรนนี้?')) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/drones', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: droneId }),
+      })
+
+      if (response.ok) {
+        setDrones(drones.filter(drone => drone.id !== droneId))
+      } else {
+        console.error('Failed to delete drone')
+      }
+    } catch (error) {
+      console.error('Error deleting drone:', error)
+    }
   }
 
   return (
@@ -258,7 +646,10 @@ export default function DroneManagement() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setSelectedDrone(drone)}
+                        onClick={() => {
+                          setEditingDrone(drone)
+                          setIsEditingDrone(true)
+                        }}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -268,6 +659,14 @@ export default function DroneManagement() {
                         onClick={() => handleStatusChange(drone.id, 'maintenance')}
                       >
                         <Wrench className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteDrone(drone.id)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
@@ -293,7 +692,6 @@ export default function DroneManagement() {
                 <TableHead>ประสบการณ์</TableHead>
                 <TableHead>ใบรับรอง</TableHead>
                 <TableHead>โดรนที่รับผิดชอบ</TableHead>
-                <TableHead>การดำเนินการ</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -323,17 +721,61 @@ export default function DroneManagement() {
                       })}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Drone Dialog */}
+      <Dialog open={isEditingDrone} onOpenChange={setIsEditingDrone}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลโดรน</DialogTitle>
+            <DialogDescription>
+              อัปเดตข้อมูลโดรนในระบบ
+            </DialogDescription>
+          </DialogHeader>
+          {editingDrone && (
+            <EditDroneForm 
+              drone={editingDrone}
+              pilots={pilots}
+              onSave={(updatedDrone) => {
+                setDrones(drones.map(d => d.id === updatedDrone.id ? updatedDrone : d))
+                setIsEditingDrone(false)
+                setEditingDrone(null)
+              }}
+              onCancel={() => {
+                setIsEditingDrone(false)
+                setEditingDrone(null)
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Drone Dialog */}
+      <Dialog open={isAddingDrone} onOpenChange={setIsAddingDrone}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>เพิ่มโดรนใหม่</DialogTitle>
+            <DialogDescription>
+              เพิ่มโดรนใหม่เข้าสู่ระบบ
+            </DialogDescription>
+          </DialogHeader>
+          <AddDroneForm 
+            pilots={pilots}
+            onSave={(newDrone) => {
+              setDrones([...drones, newDrone])
+              setIsAddingDrone(false)
+            }}
+            onCancel={() => {
+              setIsAddingDrone(false)
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

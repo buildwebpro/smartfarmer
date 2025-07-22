@@ -9,9 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Search, Trash2, Edit, MapPin, Phone, Mail, Calendar, Star, AlertTriangle, Trophy, Clock, Shield, Users, Gauge, RefreshCw, User, UserCheck, Award } from "lucide-react"
+import { UserCheck, Plus, Edit, Trash2, RefreshCw, Award, Phone, MapPin, Clock, User, UserX, AlertTriangle } from "lucide-react"
 import ProtectedRoute from "@/components/protected-route"
 
 interface Pilot {
@@ -81,27 +80,6 @@ export default function AdminPilotsPage() {
   })
   const [isAddPilotDialogOpen, setIsAddPilotDialogOpen] = useState(false)
   const [editingPilotId, setEditingPilotId] = useState<string | null>(null)
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [updating, setUpdating] = useState(false)
-  const [activeTab, setActiveTab] = useState('personal')
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-    birthDate: '',
-    licenseNumber: '',
-    licenseExpiry: '',
-    totalFlightHours: 0,
-    droneSprayingHours: 0,
-    certifications: '',
-    specializations: '',
-    emergencyContact: '',
-    emergencyPhone: '',
-    healthStatus: '',
-    lastMedicalCheck: '',
-    notes: ''
-  })
   const [newCertification, setNewCertification] = useState("")
 
   const fetchPilots = async () => {
@@ -170,114 +148,6 @@ export default function AdminPilotsPage() {
       console.error("Error adding pilot:", error)
       alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถเพิ่มข้อมูลได้"}`)
     }
-  }
-
-  const handleEditPilot = (pilot: Pilot) => {
-    setEditingPilot(pilot)
-    setEditingPilotId(pilot.id)
-    setEditDialogOpen(true)
-    
-    // Populate form data with pilot information
-    setFormData({
-      name: pilot.name || '',
-      phone: pilot.phone || '',
-      email: pilot.email || '',
-      address: pilot.address || '',
-      birthDate: pilot.birth_date || '',
-      licenseNumber: pilot.uas_license_no || '',
-      licenseExpiry: pilot.uas_license_expiry || '',
-      totalFlightHours: pilot.total_flight_hours || 0,
-      droneSprayingHours: pilot.agricultural_hours || 0,
-      certifications: Array.isArray(pilot.certifications) ? pilot.certifications.join(', ') : '',
-      specializations: '',
-      emergencyContact: '',
-      emergencyPhone: '',
-      healthStatus: pilot.health_status || '',
-      lastMedicalCheck: '',
-      notes: ''
-    })
-  }
-
-  const handleUpdatePilot = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!editingPilot) return
-    
-    setUpdating(true)
-    try {
-      const updateData = {
-        id: editingPilot.id,
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email,
-        address: formData.address,
-        birth_date: formData.birthDate,
-        uas_license_no: formData.licenseNumber,
-        uas_license_expiry: formData.licenseExpiry,
-        total_flight_hours: formData.totalFlightHours,
-        agricultural_hours: formData.droneSprayingHours,
-        certifications: formData.certifications.split(',').map(c => c.trim()).filter(c => c),
-        health_status: formData.healthStatus,
-        notes: formData.notes,
-        emergency_contact: formData.emergencyContact,
-        emergency_phone: formData.emergencyPhone,
-        specializations: formData.specializations
-      }
-
-      const response = await fetch("/api/pilots", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || "เกิดข้อผิดพลาด")
-      }
-      
-      setEditingPilot(null)
-      setEditingPilotId(null)
-      setEditDialogOpen(false)
-      fetchPilots()
-      alert("อัพเดตข้อมูลสำเร็จ")
-    } catch (error) {
-      console.error("Error updating pilot:", error)
-      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถอัพเดตข้อมูลได้"}`)
-    } finally {
-      setUpdating(false)
-    }
-  }
-
-  const handleCancelEditPilot = () => {
-    setEditingPilot(null)
-    setEditingPilotId(null)
-    setEditDialogOpen(false)
-    setFormData({
-      name: '',
-      phone: '',
-      email: '',
-      address: '',
-      birthDate: '',
-      licenseNumber: '',
-      licenseExpiry: '',
-      totalFlightHours: 0,
-      droneSprayingHours: 0,
-      certifications: '',
-      specializations: '',
-      emergencyContact: '',
-      emergencyPhone: '',
-      healthStatus: '',
-      lastMedicalCheck: '',
-      notes: ''
-    })
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'totalFlightHours' || name === 'droneSprayingHours' ? 
-        (value === '' ? 0 : parseInt(value) || 0) : value
-    }))
   }
 
   const handleDeletePilot = async (id: string) => {
@@ -797,13 +667,6 @@ export default function AdminPilotsPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditPilot(pilot)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
                               onClick={() => handleDeletePilot(pilot.id)}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -819,176 +682,6 @@ export default function AdminPilotsPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Edit Pilot Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>แก้ไขข้อมูลนักบิน</DialogTitle>
-          </DialogHeader>
-          
-          <form onSubmit={handleUpdatePilot} className="space-y-6">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="personal">ข้อมูลส่วนตัว</TabsTrigger>
-                <TabsTrigger value="experience">ประสบการณ์</TabsTrigger>
-                <TabsTrigger value="safety">ความปลอดภัย</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="personal" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-name">ชื่อ-นามสกุล</Label>
-                    <Input 
-                      id="edit-name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-phone">เบอร์โทรศัพท์</Label>
-                    <Input 
-                      id="edit-phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-email">อีเมล</Label>
-                    <Input 
-                      id="edit-email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-birthDate">วันเกิด</Label>
-                    <Input 
-                      id="edit-birthDate"
-                      name="birthDate"
-                      type="date"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="edit-address">ที่อยู่</Label>
-                    <Textarea 
-                      id="edit-address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder="ที่อยู่ปัจจุบัน"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-licenseNumber">หมายเลขใบอนุญาต</Label>
-                    <Input 
-                      id="edit-licenseNumber"
-                      name="licenseNumber"
-                      value={formData.licenseNumber}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-licenseExpiry">วันหมดอายุใบอนุญาต</Label>
-                    <Input 
-                      id="edit-licenseExpiry"
-                      name="licenseExpiry"
-                      type="date"
-                      value={formData.licenseExpiry}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="experience" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-totalFlightHours">ชั่วโมงบินรวม</Label>
-                    <Input 
-                      id="edit-totalFlightHours"
-                      name="totalFlightHours"
-                      type="number"
-                      value={formData.totalFlightHours}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="edit-droneSprayingHours">ชั่วโมงฉีดพ่นด้วยโดรน</Label>
-                    <Input 
-                      id="edit-droneSprayingHours"
-                      name="droneSprayingHours"
-                      type="number"
-                      value={formData.droneSprayingHours}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="edit-certifications">ใบรับรอง/การอบรม</Label>
-                    <Textarea 
-                      id="edit-certifications"
-                      name="certifications"
-                      value={formData.certifications}
-                      onChange={handleInputChange}
-                      placeholder="ระบุใบรับรองและการอบรมที่ได้รับ (คั่นด้วยเครื่องหมายจุลภาค)"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="safety" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="edit-healthStatus">สถานะสุขภาพ</Label>
-                    <Select 
-                      name="healthStatus"
-                      value={formData.healthStatus}
-                      onValueChange={(value: string) => setFormData({...formData, healthStatus: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกสถานะสุขภาพ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="excellent">ดีเยี่ยม</SelectItem>
-                        <SelectItem value="good">ดี</SelectItem>
-                        <SelectItem value="fair">พอใช้</SelectItem>
-                        <SelectItem value="poor">ไม่ดี</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="col-span-2">
-                    <Label htmlFor="edit-notes">หมายเหตุ</Label>
-                    <Textarea 
-                      id="edit-notes"
-                      name="notes"
-                      value={formData.notes}
-                      onChange={handleInputChange}
-                      placeholder="หมายเหตุเพิ่มเติม"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={handleCancelEditPilot}>
-                ยกเลิก
-              </Button>
-              <Button type="submit" disabled={updating}>
-                {updating ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
     </ProtectedRoute>
   )
 }

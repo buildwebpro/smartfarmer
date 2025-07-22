@@ -66,6 +66,7 @@ export default function AdminDashboard() {
   })
 
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
+  const [notifications, setNotifications] = useState<any[]>([])
   const [currentDate, setCurrentDate] = useState<string>("")
 
   // ✅ ตั้งค่าวันที่ปัจจุบันหลังจาก component mount เพื่อป้องกัน hydration error
@@ -91,50 +92,98 @@ export default function AdminDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Mock data for demonstration
+      // Fetch real data from APIs
+      const [bookingsResponse, dronesResponse, notificationsResponse] = await Promise.all([
+        fetch('/api/bookings'),
+        fetch('/api/drones'),
+        fetch('/api/notifications')
+      ])
+
+      let totalOrders = 0
+      let totalRevenue = 0
+      let totalArea = 0
+      let activeOrders = 0
+      let completedToday = 0
+      let recentOrdersList: Order[] = []
+
+      if (bookingsResponse.ok) {
+        const bookingsData = await bookingsResponse.json()
+        if (bookingsData.success && bookingsData.data) {
+          const bookings = bookingsData.data
+          
+          totalOrders = bookings.length
+          totalRevenue = bookings.reduce((sum: number, booking: any) => sum + (booking.total_price || 0), 0)
+          totalArea = bookings.reduce((sum: number, booking: any) => sum + (booking.area_size || 0), 0)
+          activeOrders = bookings.filter((b: any) => ['paid', 'assigned'].includes(b.status)).length
+          
+          // Get orders completed today
+          const today = new Date().toISOString().split('T')[0]
+          completedToday = bookings.filter((b: any) => 
+            b.status === 'completed' && b.updated_at?.startsWith(today)
+          ).length
+
+          // Transform to recent orders format
+          recentOrdersList = bookings.slice(0, 10).map((booking: any) => ({
+            id: booking.id.toString(),
+            customerName: booking.customer_name || 'ไม่ระบุชื่อ',
+            phoneNumber: booking.phone_number || 'ไม่ระบุ',
+            areaSize: booking.area_size || 0,
+            cropType: booking.crop_type || 'ไม่ระบุ',
+            sprayType: booking.spray_type || 'ไม่ระบุ', 
+            totalPrice: booking.total_price || 0,
+            depositAmount: booking.deposit_amount || 0,
+            status: booking.status || 'pending_payment',
+            scheduledDate: booking.scheduled_date || '',
+            scheduledTime: booking.scheduled_time || '',
+            createdAt: booking.created_at || '',
+          }))
+        }
+      }
+
+      // Handle notifications
+      if (notificationsResponse.ok) {
+        const notificationsData = await notificationsResponse.json()
+        if (notificationsData.success && notificationsData.data) {
+          setNotifications(notificationsData.data)
+        }
+      }
+
+      let availableDrones = 0
+      if (dronesResponse.ok) {
+        const dronesData = await dronesResponse.json()
+        if (dronesData.success && dronesData.data) {
+          availableDrones = dronesData.data.filter((drone: any) => 
+            drone.status === 'available'
+          ).length
+        }
+      }
+
       setStats({
-        totalOrders: 156,
-        totalRevenue: 234500,
-        totalArea: 1250,
-        activeOrders: 12,
-        availableDrones: 4,
-        completedToday: 8,
-        totalCustomers: 89,
-        averageOrderValue: 1503,
+        totalOrders,
+        totalRevenue,
+        totalArea,
+        activeOrders,
+        availableDrones,
+        completedToday,
+        totalCustomers: Math.floor(totalOrders * 0.8), // Estimate unique customers
+        averageOrderValue: totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0,
       })
 
-      setRecentOrders([
-        {
-          id: "1",
-          customerName: "นายสมชาย ใจดี",
-          phoneNumber: "081-234-5678",
-          areaSize: 5,
-          cropType: "ข้าว",
-          sprayType: "ปุ๋ย",
-          totalPrice: 750,
-          depositAmount: 225,
-          status: "paid",
-          scheduledDate: "2024-01-20",
-          scheduledTime: "08:00",
-          createdAt: "2024-01-18T10:30:00Z",
-        },
-        {
-          id: "2",
-          customerName: "นางสาวมาลี สวยงาม",
-          phoneNumber: "082-345-6789",
-          areaSize: 3,
-          cropType: "ทุเรียน",
-          sprayType: "ฮอร์โมน",
-          totalPrice: 750,
-          depositAmount: 225,
-          status: "pending_payment",
-          scheduledDate: "2024-01-21",
-          scheduledTime: "09:00",
-          createdAt: "2024-01-18T14:15:00Z",
-        },
-      ])
+      setRecentOrders(recentOrdersList)
     } catch (error) {
       console.error("Error fetching dashboard data:", error)
+      // Fallback to empty data
+      setStats({
+        totalOrders: 0,
+        totalRevenue: 0,
+        totalArea: 0,
+        activeOrders: 0,
+        availableDrones: 0,
+        completedToday: 0,
+        totalCustomers: 0,
+        averageOrderValue: 0,
+      })
+      setRecentOrders([])
     }
   }
 
@@ -255,33 +304,70 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl">
-                  <div className="p-1 bg-yellow-100 rounded-full">
-                    <AlertCircle className="h-4 w-4 text-yellow-600" />
+                {notifications.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>ไม่มีการแจ้งเตือนใหม่</p>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-yellow-800">โดรน #3 ต้องการการบำรุงรักษา</p>
-                    <p className="text-sm text-yellow-600 mt-1">ครบกำหนดบำรุงรักษาในอีก 2 วัน</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-xl">
-                  <div className="p-1 bg-blue-100 rounded-full">
-                    <CheckCircle2 className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-blue-800">มีออร์เดอร์ใหม่ 3 รายการรอการยืนยัน</p>
-                    <p className="text-sm text-blue-600 mt-1">กรุณาตรวจสอบและยืนยันออร์เดอร์</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-xl">
-                  <div className="p-1 bg-emerald-100 rounded-full">
-                    <TrendingUp className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-emerald-800">ยอดขายเดือนนี้เพิ่มขึ้น 15%</p>
-                    <p className="text-sm text-emerald-600 mt-1">เมื่อเทียบกับเดือนที่แล้ว</p>
-                  </div>
-                </div>
+                ) : (
+                  notifications.map((notification) => {
+                    const getNotificationStyle = (type: string) => {
+                      switch (type) {
+                        case 'warning':
+                          return {
+                            bg: 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200',
+                            iconBg: 'bg-yellow-100',
+                            iconColor: 'text-yellow-600',
+                            titleColor: 'text-yellow-800',
+                            messageColor: 'text-yellow-600',
+                            icon: AlertCircle
+                          }
+                        case 'info':
+                          return {
+                            bg: 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200',
+                            iconBg: 'bg-blue-100',
+                            iconColor: 'text-blue-600',
+                            titleColor: 'text-blue-800',
+                            messageColor: 'text-blue-600',
+                            icon: CheckCircle2
+                          }
+                        case 'success':
+                          return {
+                            bg: 'bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200',
+                            iconBg: 'bg-emerald-100',
+                            iconColor: 'text-emerald-600',
+                            titleColor: 'text-emerald-800',
+                            messageColor: 'text-emerald-600',
+                            icon: TrendingUp
+                          }
+                        default:
+                          return {
+                            bg: 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200',
+                            iconBg: 'bg-gray-100',
+                            iconColor: 'text-gray-600',
+                            titleColor: 'text-gray-800',
+                            messageColor: 'text-gray-600',
+                            icon: Bell
+                          }
+                      }
+                    }
+
+                    const style = getNotificationStyle(notification.type)
+                    const IconComponent = style.icon
+
+                    return (
+                      <div key={notification.id} className={`flex items-start gap-3 p-4 ${style.bg} border rounded-xl`}>
+                        <div className={`p-1 ${style.iconBg} rounded-full`}>
+                          <IconComponent className={`h-4 w-4 ${style.iconColor}`} />
+                        </div>
+                        <div className="flex-1">
+                          <p className={`font-medium ${style.titleColor}`}>{notification.title}</p>
+                          <p className={`text-sm ${style.messageColor} mt-1`}>{notification.message}</p>
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
