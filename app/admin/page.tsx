@@ -13,10 +13,8 @@ import { ModernRecentOrders } from "@/components/modern-recent-orders"
 import ProtectedRoute from "@/components/protected-route"
 import { 
   Calendar, 
-  AlertCircle, 
   TrendingUp, 
   Activity,
-  Bell,
   CheckCircle2,
   Clock,
   Zap,
@@ -66,8 +64,12 @@ export default function AdminDashboard() {
   })
 
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
-  const [notifications, setNotifications] = useState<any[]>([])
   const [currentDate, setCurrentDate] = useState<string>("")
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0)
+  const [isFetching, setIsFetching] = useState(false)
+
+  // Cache data for 30 seconds เพื่อลดการเรียก API บ่อยๆ
+  const CACHE_DURATION = 30000 // 30 วินาที
 
   // ✅ ตั้งค่าวันที่ปัจจุบันหลังจาก component mount เพื่อป้องกัน hydration error
   useEffect(() => {
@@ -93,10 +95,9 @@ export default function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       // Fetch real data from APIs
-      const [bookingsResponse, dronesResponse, notificationsResponse] = await Promise.all([
+      const [bookingsResponse, dronesResponse] = await Promise.all([
         fetch('/api/bookings'),
-        fetch('/api/drones'),
-        fetch('/api/notifications')
+        fetch('/api/drones')
       ])
 
       let totalOrders = 0
@@ -137,14 +138,6 @@ export default function AdminDashboard() {
             scheduledTime: booking.scheduled_time || '',
             createdAt: booking.created_at || '',
           }))
-        }
-      }
-
-      // Handle notifications
-      if (notificationsResponse.ok) {
-        const notificationsData = await notificationsResponse.json()
-        if (notificationsData.success && notificationsData.data) {
-          setNotifications(notificationsData.data)
         }
       }
 
@@ -232,10 +225,6 @@ export default function AdminDashboard() {
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
-            <Bell className="h-4 w-4 mr-2" />
-            แจ้งเตือน
-          </Button>
-          <Button variant="outline" size="sm" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
             <BarChart3 className="h-4 w-4 mr-2" />
             รายงาน
           </Button>
@@ -255,9 +244,8 @@ export default function AdminDashboard() {
           <ModernRecentOrders orders={recentOrders} />
         </div>
 
-        {/* Today's Schedule & Alerts */}
-        <div className="lg:col-span-1 space-y-4">
-          {/* Today's Schedule */}
+        {/* Today's Schedule */}
+        <div className="lg:col-span-1">
           <Card className="shadow-lg border-0 bg-white">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
@@ -281,93 +269,6 @@ export default function AdminDashboard() {
                 </div>
                 <p className="text-gray-500 font-medium">ไม่มีงานที่กำหนดไว้</p>
                 <p className="text-sm text-gray-400">งานที่กำหนดไว้จะปรากฏที่นี่</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Alerts */}
-          <Card className="shadow-lg border-0 bg-white">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <Bell className="h-5 w-5 text-orange-600" />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900">
-                    การแจ้งเตือน
-                  </CardTitle>
-                  <CardDescription className="text-gray-500">
-                    ข้อความสำคัญและการแจ้งเตือน
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {notifications.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>ไม่มีการแจ้งเตือนใหม่</p>
-                  </div>
-                ) : (
-                  notifications.map((notification) => {
-                    const getNotificationStyle = (type: string) => {
-                      switch (type) {
-                        case 'warning':
-                          return {
-                            bg: 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200',
-                            iconBg: 'bg-yellow-100',
-                            iconColor: 'text-yellow-600',
-                            titleColor: 'text-yellow-800',
-                            messageColor: 'text-yellow-600',
-                            icon: AlertCircle
-                          }
-                        case 'info':
-                          return {
-                            bg: 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200',
-                            iconBg: 'bg-blue-100',
-                            iconColor: 'text-blue-600',
-                            titleColor: 'text-blue-800',
-                            messageColor: 'text-blue-600',
-                            icon: CheckCircle2
-                          }
-                        case 'success':
-                          return {
-                            bg: 'bg-gradient-to-r from-emerald-50 to-green-50 border-emerald-200',
-                            iconBg: 'bg-emerald-100',
-                            iconColor: 'text-emerald-600',
-                            titleColor: 'text-emerald-800',
-                            messageColor: 'text-emerald-600',
-                            icon: TrendingUp
-                          }
-                        default:
-                          return {
-                            bg: 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200',
-                            iconBg: 'bg-gray-100',
-                            iconColor: 'text-gray-600',
-                            titleColor: 'text-gray-800',
-                            messageColor: 'text-gray-600',
-                            icon: Bell
-                          }
-                      }
-                    }
-
-                    const style = getNotificationStyle(notification.type)
-                    const IconComponent = style.icon
-
-                    return (
-                      <div key={notification.id} className={`flex items-start gap-3 p-4 ${style.bg} border rounded-xl`}>
-                        <div className={`p-1 ${style.iconBg} rounded-full`}>
-                          <IconComponent className={`h-4 w-4 ${style.iconColor}`} />
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-medium ${style.titleColor}`}>{notification.title}</p>
-                          <p className={`text-sm ${style.messageColor} mt-1`}>{notification.message}</p>
-                        </div>
-                      </div>
-                    )
-                  })
-                )}
               </div>
             </CardContent>
           </Card>

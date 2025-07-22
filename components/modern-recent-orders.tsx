@@ -60,7 +60,11 @@ export function ModernRecentOrders({ orders }: RecentOrdersProps) {
       },
     }
 
-    const config = statusConfig[status as keyof typeof statusConfig]
+    const config = statusConfig[status as keyof typeof statusConfig] || {
+      label: status || "ไม่ระบุ",
+      className: "bg-gray-100 text-gray-600 border-gray-300"
+    }
+    
     return (
       <Badge variant="outline" className={config.className}>
         {config.label}
@@ -69,7 +73,9 @@ export function ModernRecentOrders({ orders }: RecentOrdersProps) {
   }
 
   const getCustomerInitials = (name: string) => {
-    const words = name.split(' ')
+    if (!name || typeof name !== 'string') return 'NA'
+    const words = name.trim().split(' ').filter(word => word.length > 0)
+    if (words.length === 0) return 'NA'
     return words.map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2)
   }
 
@@ -100,7 +106,7 @@ export function ModernRecentOrders({ orders }: RecentOrdersProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {orders.length === 0 ? (
+          {!orders || orders.length === 0 ? (
             <div className="text-center py-12">
               <div className="p-4 bg-gray-50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Clock className="h-8 w-8 text-gray-400" />
@@ -109,9 +115,9 @@ export function ModernRecentOrders({ orders }: RecentOrdersProps) {
               <p className="text-sm text-gray-400">ออร์เดอร์ใหม่จะปรากฏที่นี่</p>
             </div>
           ) : (
-            orders.map((order, index) => (
+            orders.filter(order => order && order.id).map((order, index) => (
               <div 
-                key={order.id} 
+                key={order.id || index} 
                 className="group relative p-4 rounded-xl border border-gray-100 hover:border-emerald-200 hover:shadow-md transition-all duration-200 bg-gradient-to-r from-white to-gray-50"
               >
                 <div className="flex items-center justify-between">
@@ -123,29 +129,29 @@ export function ModernRecentOrders({ orders }: RecentOrdersProps) {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{order.customerName}</h3>
+                        <h3 className="font-semibold text-gray-900">{order.customerName || 'ไม่ระบุชื่อ'}</h3>
                         {getStatusBadge(order.status)}
                       </div>
                       <div className="flex items-center gap-4 text-sm text-gray-500 mb-2">
                         <div className="flex items-center gap-1">
                           <Phone className="h-3 w-3" />
-                          {order.phoneNumber}
+                          {order.phoneNumber || 'ไม่ระบุเบอร์'}
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
-                          {order.areaSize} ไร่
+                          {order.areaSize || '0'} ไร่
                         </div>
                         <div className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(order.scheduledDate).toLocaleDateString("th-TH")}
+                          {order.scheduledDate ? new Date(order.scheduledDate).toLocaleDateString("th-TH") : 'ไม่ระบุวันที่'}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="bg-emerald-50 text-emerald-700">
-                          {order.cropType}
+                          {order.cropType || 'ไม่ระบุพืช'}
                         </Badge>
                         <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-                          {order.sprayType}
+                          {order.sprayType || 'ไม่ระบุยา'}
                         </Badge>
                       </div>
                     </div>
@@ -154,10 +160,10 @@ export function ModernRecentOrders({ orders }: RecentOrdersProps) {
                     <div className="text-right">
                       <div className="flex items-center gap-1 text-lg font-bold text-gray-900">
                         <DollarSign className="h-4 w-4 text-emerald-600" />
-                        ฿{order.totalPrice.toLocaleString()}
+                        ฿{(order.totalPrice || 0).toLocaleString()}
                       </div>
                       <p className="text-sm text-gray-500">
-                        มัดจำ: ฿{order.depositAmount.toLocaleString()}
+                        มัดจำ: ฿{(order.depositAmount || 0).toLocaleString()}
                       </p>
                     </div>
                     <Button 

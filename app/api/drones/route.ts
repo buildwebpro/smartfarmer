@@ -3,13 +3,16 @@ import { supabase } from "@/lib/supabaseClient"
 
 export async function GET() {
   try {
+    console.log('[API] Fetching drones...')
+    const startTime = Date.now()
+    
+    // ใช้ query แบบง่ายก่อน ไม่ join กับ pilots
     const { data, error } = await supabase
       .from("drones")
-      .select(`
-        *,
-        assigned_pilot:pilots(name, phone, experience_years)
-      `)
+      .select("*")
       .order("created_at", { ascending: false })
+    
+    console.log(`[API] Drones query took: ${Date.now() - startTime}ms`)
     
     if (error) {
       console.error("Error fetching drones:", error)
@@ -22,7 +25,7 @@ export async function GET() {
       name: drone.name,
       model: drone.model,
       status: drone.status,
-      assignedPilot: drone.assigned_pilot?.name || null,
+      assignedPilot: null, // จะ fetch ทีหลังถ้าจำเป็น
       assignedPilotId: drone.assigned_pilot_id,
       batteryLevel: drone.battery_level,
       flightHours: drone.flight_hours,
@@ -32,6 +35,7 @@ export async function GET() {
       isActive: drone.is_active
     })) || []
     
+    console.log(`[API] Drones response ready in: ${Date.now() - startTime}ms`)
     return NextResponse.json({ data: transformedData })
   } catch (error) {
     console.error("Error in drones GET:", error)

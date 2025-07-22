@@ -101,10 +101,23 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabase.from("bookings").select("*")
+    console.log('[API] Fetching bookings...')
+    const startTime = Date.now()
+    
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50) // จำกัดผลลัพธ์เพื่อความเร็ว
+    
+    console.log(`[API] Bookings query took: ${Date.now() - startTime}ms`)
+    
     if (error) {
+      console.error("Error fetching bookings:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
+    
+    console.log(`[API] Bookings response ready in: ${Date.now() - startTime}ms`)
     return NextResponse.json({
       success: true,
       data,
