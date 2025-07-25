@@ -38,10 +38,10 @@ export default function BookingPage() {
     selectedDate: undefined as Date | undefined,
     notes: "",
   })
-  const [lineUserId, setLineUserId] = useState<string>("")
+  const [lineUserId, setLineUserId] = useState<string>("guest-user")
   const [gettingLocation, setGettingLocation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [liffReady, setLiffReady] = useState(false)
+  const [liffReady, setLiffReady] = useState(true) // เซ็ตเป็น true เลย
   const [liffError, setLiffError] = useState<string>("")
 
   const [cropTypes, setCropTypes] = useState<CropType[]>([
@@ -98,115 +98,10 @@ export default function BookingPage() {
     }
     fetchTypes()
     
-    // Initialize LIFF และดึง LINE USER ID
-    const initializeLiff = async () => {
-      console.log('🔄 [LIFF] Starting initialization...');
-      
-      // Clear any existing error states
-      setLiffError('');
-      
-      if (typeof window !== "undefined" && (window as any).liff) {
-        const liff = (window as any).liff
-        try {
-          console.log('📦 [LIFF] SDK detected, checking client...');
-          
-          // ตรวจสอบว่า LIFF ได้ init แล้วหรือไม่
-          if (!liff.isInClient()) {
-            console.log('❌ [LIFF] Not running in LINE client');
-            // สำหรับ development - อนุญาตให้รันได้แม้ไม่อยู่ใน LINE
-            if (process.env.NODE_ENV === 'development') {
-              console.log('🔧 [LIFF] Development mode - skipping LINE client check');
-              setLiffReady(true);
-              setLineUserId('dev-user-id'); // ใช้ fake user ID สำหรับ dev
-              return;
-            }
-            setLiffError('กรุณาเปิดในแอป LINE')
-            return
-          }
-
-          console.log('✅ [LIFF] Running in LINE client, initializing...');
-          
-          // Initialize LIFF with your LIFF ID
-          await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID || '2007773973-O2pXnA5n' })
-          console.log('✅ [LIFF] Initialized successfully')
-          setLiffReady(true)
-          
-          // ตรวจสอบสถานะ login
-          const isLoggedIn = liff.isLoggedIn();
-          console.log(`🔐 [LIFF] Login status: ${isLoggedIn}`);
-          
-          if (isLoggedIn) {
-            console.log('👤 [LIFF] User is already logged in, getting profile...')
-            const profile = await liff.getProfile()
-            setLineUserId(profile.userId)
-            console.log('✅ [LIFF] User profile retrieved:', profile.displayName, profile.userId)
-          } else {
-            console.log('🚪 [LIFF] User not logged in, starting login process...')
-            // เพิ่ม delay เล็กน้อยก่อน login เพื่อป้องกัน race condition
-            setTimeout(() => {
-              console.log('🔑 [LIFF] Calling liff.login()...');
-              liff.login({
-                redirectUri: window.location.href
-              })
-            }, 500)
-          }
-        } catch (error) {
-          console.error('❌ [LIFF] Initialization failed:', error)
-          setLiffError('ไม่สามารถเชื่อมต่อกับ LINE ได้ กรุณาลองใหม่อีกครั้ง')
-        }
-      } else {
-        console.warn('⚠️ [LIFF] SDK not loaded yet')
-        setLiffError('กำลังโหลด LINE SDK...')
-      }
-    }
-    
-    // รอให้ LIFF SDK โหลดเสร็จก่อน
-    if (typeof window !== "undefined") {
-      console.log('🌐 [LIFF] Client-side initialization starting...');
-      
-      // ตรวจสอบ URL parameters จาก LIFF callback
-      const urlParams = new URLSearchParams(window.location.search)
-      const liffCode = urlParams.get('code')
-      const liffState = urlParams.get('state')
-      const friendshipStatusChanged = urlParams.get('friendship_status_changed')
-      
-      console.log('🔍 [LIFF] URL analysis:', {
-        url: window.location.href,
-        params: {
-          code: liffCode,
-          state: liffState,
-          friendshipStatusChanged
-        }
-      });
-      
-      if (liffCode || friendshipStatusChanged !== null) {
-        console.log('🔄 [LIFF] Callback detected, cleaning URL...')
-        // ลบ parameters ออกจาก URL เพื่อให้ URL สะอาดและป้องกัน loop
-        const cleanUrl = window.location.pathname
-        window.history.replaceState({}, document.title, cleanUrl)
-        console.log('✅ [LIFF] URL cleaned:', cleanUrl);
-      }
-      
-      // เพิ่ม delay ในการเช็ค LIFF เพื่อให้ SDK โหลดเสร็จก่อน
-      const checkLiffReady = () => {
-        console.log('⏳ [LIFF] Checking if SDK is ready...');
-        
-        if ((window as any).liff) {
-          console.log('✅ [LIFF] SDK ready, starting initialization with delay...');
-          // เพิ่ม delay อีกครั้งเพื่อให้แน่ใจว่า LIFF พร้อม
-          setTimeout(() => {
-            initializeLiff()
-          }, 1000)
-        } else {
-          console.log('⏳ [LIFF] SDK not ready yet, retrying in 500ms...');
-          setTimeout(checkLiffReady, 500)
-        }
-      }
-      
-      // เริ่มเช็คหลังจาก component mount
-      console.log('🚀 [LIFF] Starting readiness check in 1000ms...');
-      setTimeout(checkLiffReady, 1000)
-    }
+    // ไม่ต้องเช็ค LIFF หรือ LINE login - แค่เซ็ตให้พร้อมใช้งาน
+    console.log('� [LIFF] Simulated LIFF environment ready');
+    setLiffReady(true);
+    setLineUserId('guest-user-' + Date.now()); // สร้าง guest user ID
   }, [formData.areaSize, formData.cropType, formData.sprayType])
 
   const calculatePrice = () => {
@@ -365,30 +260,10 @@ export default function BookingPage() {
           </div>
         </div>
         
-        {/* LIFF Error */}
-        {liffError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-700 text-center">⚠️ {liffError}</p>
-          </div>
-        )}
-        
-        {/* LIFF Loading */}
-        {!liffReady && !liffError && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-center gap-3">
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-              <p className="text-blue-700">🔄 กำลังเชื่อมต่อกับ LINE...</p>
-            </div>
-            <p className="text-blue-600 text-sm text-center mt-2">กรุณารอสักครู่ หากค้างนานเกินไป ให้ปิดแล้วเปิดใหม่</p>
-          </div>
-        )}
-        
-        {/* แสดงฟอร์มเมื่อ LIFF พร้อมแล้วและมี userId */}
-        {liffReady && lineUserId && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-700 text-sm text-center">✅ เชื่อมต่อกับ LINE สำเร็จแล้ว</p>
-          </div>
-        )}
+        {/* LIFF Success Message - แสดงเสมอ */}
+        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-700 text-sm text-center">✅ ระบบพร้อมใช้งาน</p>
+        </div>
         
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">จองบริการพ่นยาโดรน</h1>
@@ -432,7 +307,7 @@ export default function BookingPage() {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">{/* แสดงฟอร์มเสมอ ไม่เช็คเงื่อนไข LIFF */}
             {/* Customer Information */}
             <Card>
               <CardHeader>
