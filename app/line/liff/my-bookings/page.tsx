@@ -36,33 +36,21 @@ export default function BookingStatusPage() {
   const [uploadDialog, setUploadDialog] = useState<string | null>(null)
 
   useEffect(() => {
-    // ดึง LINE USER ID จาก LIFF SDK
-    const getLineUserId = async () => {
-      if (typeof window !== "undefined" && (window as any).liff) {
-        const liff = (window as any).liff
-        try {
-          await liff.init({ liffId: "YOUR_LIFF_ID" }) // ใส่ LIFF ID จริง
-          if (!liff.isLoggedIn()) {
-            liff.login()
-          } else {
-            const profile = await liff.getProfile()
-            setLineUserId(profile.userId)
-            fetchUserBookings(profile.userId)
-          }
-        } catch (error) {
-          console.error("LIFF initialization failed:", error)
-          // ใน production ให้ redirect ไปยังหน้า error
-          window.location.href = "/error"
-        }
+    // ใช้ guest user system แทน LIFF authentication
+    const getGuestUserId = () => {
+      const userId = localStorage.getItem('guest_user_id');
+      if (userId) {
+        console.log('🔄 [USER] Retrieved guest user ID for bookings:', userId);
+        setLineUserId(userId);
+        fetchUserBookings(userId);
       } else {
-        // ไม่ใช่ environment ที่มี LIFF
-        const fallbackUserId = "anonymous-user"
-        setLineUserId(fallbackUserId)
-        fetchUserBookings(fallbackUserId)
+        console.log('❌ [USER] No guest user ID found - user needs to make a booking first');
+        setLoading(false);
+        // ไม่มี user ID หมายความว่ายังไม่เคยจอง
       }
-    }
-
-    getLineUserId()
+    };
+    
+    getGuestUserId();
   }, [])
 
   const fetchUserBookings = async (userId: string) => {
@@ -202,10 +190,22 @@ export default function BookingStatusPage() {
           <Card>
             <CardContent className="text-center py-8">
               <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">ยังไม่มีการจองบริการ</p>
-              <Link href="/line/liff/booking">
-                <Button>จองบริการเลย</Button>
-              </Link>
+              {lineUserId ? (
+                <>
+                  <p className="text-gray-500 mb-4">ยังไม่มีการจองบริการ</p>
+                  <Link href="/line/liff/booking">
+                    <Button>จองบริการเลย</Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-500 mb-4">ไม่พบประวัติการจอง</p>
+                  <p className="text-sm text-gray-400 mb-4">กรุณาทำการจองผ่านระบบก่อน เพื่อดูประวัติการจอง</p>
+                  <Link href="/line/liff/booking">
+                    <Button>เริ่มจองบริการ</Button>
+                  </Link>
+                </>
+              )}
             </CardContent>
           </Card>
         ) : (

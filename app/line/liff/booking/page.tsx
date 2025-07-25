@@ -99,9 +99,24 @@ export default function BookingPage() {
     fetchTypes()
     
     // ไม่ต้องเช็ค LIFF หรือ LINE login - แค่เซ็ตให้พร้อมใช้งาน
-    console.log('� [LIFF] Simulated LIFF environment ready');
+    console.log('📱 [LIFF] Simulated LIFF environment ready');
     setLiffReady(true);
-    setLineUserId('guest-user-' + Date.now()); // สร้าง guest user ID
+    
+    // สร้าง persistent user ID ใน localStorage
+    const getOrCreateUserId = () => {
+      let userId = localStorage.getItem('guest_user_id');
+      if (!userId) {
+        userId = 'guest-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('guest_user_id', userId);
+        console.log('📝 [USER] Created new guest user ID:', userId);
+      } else {
+        console.log('🔄 [USER] Retrieved existing guest user ID:', userId);
+      }
+      return userId;
+    };
+    
+    const userId = getOrCreateUserId();
+    setLineUserId(userId);
   }, [formData.areaSize, formData.cropType, formData.sprayType])
 
   const calculatePrice = () => {
