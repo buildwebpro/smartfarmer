@@ -6,8 +6,8 @@ export const VALIDATION_PATTERNS = {
   phone: /^[0-9]{9,10}$/,
   bookingId: /^[A-Z]{2}[0-9]+$/,
   userId: /^[a-zA-Z0-9_-]+$/,
-  name: /^[ก-๙a-zA-Z\s]{2,50}$/,
-  address: /^[ก-๙a-zA-Z0-9\s\.,/-]{5,200}$/,
+  name: /^[ก-๙a-zA-Z\s\.]{2,100}$/,
+  address: /^[ก-๙a-zA-Z0-9\s\.,\-/()]{2,200}$/,
   gpsCoordinates: /^-?\d+\.?\d*,-?\d+\.?\d*$/,
 }
 
@@ -56,10 +56,18 @@ export function validateAreaSize(size: string | number): boolean {
 export function validateDate(dateString: string): boolean {
   const date = new Date(dateString)
   const now = new Date()
-  const minDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000) // 3 days from now
+  
+  // ตรวจสอบว่าเป็น valid date
+  if (isNaN(date.getTime())) {
+    return false
+  }
+  
+  // อนุญาตให้จองได้ตั้งแต่วันปัจจุบันเป็นต้นไป
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const bookingDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
   const maxDate = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000) // 1 year from now
   
-  return date >= minDate && date <= maxDate
+  return bookingDate >= today && date <= maxDate
 }
 
 // File validation
@@ -122,8 +130,14 @@ export function validateBookingData(data: any): { valid: boolean; errors: string
     errors.push('ขนาดพื้นที่ไม่ถูกต้อง')
   }
 
-  if (data.gpsCoordinates && !validateGpsCoordinates(data.gpsCoordinates)) {
-    errors.push('พิกัด GPS ไม่ถูกต้อง')
+  if (data.gpsCoordinates && data.gpsCoordinates.trim()) {
+    // อนุญาตทั้ง GPS coordinates และที่อยู่ธรรมดา
+    const isGpsFormat = VALIDATION_PATTERNS.gpsCoordinates.test(data.gpsCoordinates)
+    const isAddressFormat = VALIDATION_PATTERNS.address.test(data.gpsCoordinates)
+    
+    if (!isGpsFormat && !isAddressFormat) {
+      errors.push('ที่อยู่หรือพิกัด GPS ไม่ถูกต้อง')
+    }
   }
 
   if (data.selectedDate && !validateDate(data.selectedDate)) {
