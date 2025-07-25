@@ -19,6 +19,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th">
+      <head>
+        <script 
+          charSet="utf-8" 
+          src="https://static.line-scdn.net/liff/edge/2/sdk.js"
+        ></script>
+      </head>
       <body className={inter.className}>
         <AuthProvider>{children}</AuthProvider>
       </body>

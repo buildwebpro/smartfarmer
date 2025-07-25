@@ -41,6 +41,8 @@ export default function BookingPage() {
   const [lineUserId, setLineUserId] = useState<string>("")
   const [gettingLocation, setGettingLocation] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [liffReady, setLiffReady] = useState(false)
+  const [liffError, setLiffError] = useState<string>("")
 
   const [cropTypes, setCropTypes] = useState<CropType[]>([
     { id: "rice", name: "ข้าว", pricePerRai: 300 },
@@ -95,19 +97,56 @@ export default function BookingPage() {
       }
     }
     fetchTypes()
-    // ดึง LINE USER ID จาก LIFF SDK
-    const getLineUserId = async () => {
+    
+    // Initialize LIFF และดึง LINE USER ID
+    const initializeLiff = async () => {
       if (typeof window !== "undefined" && (window as any).liff) {
         const liff = (window as any).liff
-        if (!liff.isLoggedIn()) {
-          liff.login()
-        } else {
-          const profile = await liff.getProfile()
-          setLineUserId(profile.userId)
+        try {
+          // Initialize LIFF with your LIFF ID
+          await liff.init({ liffId: process.env.NEXT_PUBLIC_LIFF_ID || '2007773973-O2pXnA5n' })
+          setLiffReady(true)
+          
+          if (!liff.isLoggedIn()) {
+            liff.login()
+          } else {
+            const profile = await liff.getProfile()
+            setLineUserId(profile.userId)
+            console.log('LIFF initialized successfully. User ID:', profile.userId)
+          }
+        } catch (error) {
+          console.error('LIFF initialization failed:', error)
+          setLiffError('ไม่สามารถเชื่อมต่อกับ LINE ได้ กรุณาเปิดในแอป LINE')
         }
+      } else {
+        console.warn('LIFF SDK not loaded')
+        setLiffError('กำลังโหลด LINE SDK...')
       }
     }
-    getLineUserId()
+    
+    // รอให้ LIFF SDK โหลดเสร็จก่อน
+    if (typeof window !== "undefined") {
+      // ตรวจสอบ URL parameters จาก LIFF callback
+      const urlParams = new URLSearchParams(window.location.search)
+      const liffCode = urlParams.get('code')
+      const liffState = urlParams.get('state')
+      
+      if (liffCode) {
+        console.log('LIFF callback detected with code:', liffCode)
+        // ลบ parameters ออกจาก URL เพื่อให้ URL สะอาด
+        const cleanUrl = window.location.pathname
+        window.history.replaceState({}, document.title, cleanUrl)
+      }
+      
+      const checkLiffReady = () => {
+        if ((window as any).liff) {
+          initializeLiff()
+        } else {
+          setTimeout(checkLiffReady, 100)
+        }
+      }
+      checkLiffReady()
+    }
   }, [formData.areaSize, formData.cropType, formData.sprayType])
 
   const calculatePrice = () => {
@@ -265,6 +304,20 @@ export default function BookingPage() {
             />
           </div>
         </div>
+        
+        {/* LIFF Error */}
+        {liffError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-center">⚠️ {liffError}</p>
+          </div>
+        )}
+        
+        {/* LIFF Loading */}
+        {!liffReady && !liffError && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-700 text-center">🔄 กำลังเชื่อมต่อกับ LINE...</p>
+          </div>
+        )}
         
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">จองบริการพ่นยาโดรน</h1>
