@@ -12,7 +12,7 @@
 LINE_CHANNEL_SECRET=your_channel_secret_here
 LINE_CHANNEL_ACCESS_TOKEN=your_channel_access_token_here  
 ADMIN_LINE_USER_ID=your_line_user_id_here
-NEXT_PUBLIC_BASE_URL=https://drone-service-app.vercel.app
+NEXT_PUBLIC_BASE_URL=https://drone-booking-app.vercel.app
 NEXT_PUBLIC_LIFF_ID=your_liff_id_here
 \`\`\`
 
@@ -74,7 +74,7 @@ NEXT_PUBLIC_LIFF_ID=your_liff_id_here
 ## 7. ทดสอบ
 
 ### ทดสอบ Webhook:
-1. เข้า: https://drone-service-app.vercel.app/api/line/test
+1. เข้า: https://drone-booking-app.vercel.app/api/line/test
 2. ควรเห็น status: "ok" และ environment variables
 
 ### ทดสอบ Bot:

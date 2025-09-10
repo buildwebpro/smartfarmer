@@ -138,7 +138,7 @@ function isValidOrigin(origin: string, host: string | null): boolean {
   const validOrigins = [
     `https://${host}`,
     `http://${host}`,
-    'https://drone-booking-service.vercel.app',
+    'https://drone-booking-app.vercel.app',
     'http://localhost:3000',
     'http://localhost:3001',
   ]
