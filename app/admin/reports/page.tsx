@@ -78,7 +78,7 @@ export default function ReportsPage() {
 
       const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
         name: getStatusText(status),
-        value: count,
+        value: count as number,
         color: getStatusColor(status)
       }));
 
@@ -89,8 +89,8 @@ export default function ReportsPage() {
       }, {} as Record<string, number>) || {};
 
       const topLocations = Object.entries(locationCounts)
-        .map(([location, count]) => ({ location, count }))
-        .sort((a, b) => (b.count as number) - (a.count as number))
+        .map(([location, count]) => ({ location, count: count as number }))
+        .sort((a, b) => b.count - a.count)
         .slice(0, 5);
 
       // Update report data state with processed analytics

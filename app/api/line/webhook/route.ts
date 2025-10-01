@@ -89,7 +89,8 @@ function verifySignature(body: string, signature: string | null): boolean {
 }
 
 async function handleBookingRequest(userId: string) {
-  const liffUrl = `https://drone-booking-app.vercel.app/line/liff/booking`
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://drone-booking-app.vercel.app"
+  const liffUrl = `${baseUrl}/line/liff/booking`
 
   await sendLineMessage(userId, {
     type: "flex",

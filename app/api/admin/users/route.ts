@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabaseClient"
+import { verifyAdminAuth, unauthorizedResponse, forbiddenResponse } from "@/lib/auth-helpers"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // ตรวจสอบสิทธิ์ admin
+    const user = await verifyAdminAuth(request)
+    if (!user) {
+      return forbiddenResponse("Admin access required")
+    }
+
     // ตรวจสอบว่ามี supabaseAdmin หรือไม่
     if (!supabaseAdmin) {
-      return NextResponse.json({ 
-        error: "Admin features not available. Please configure SUPABASE_SERVICE_ROLE_KEY." 
+      return NextResponse.json({
+        error: "Service temporarily unavailable"
       }, { status: 503 })
     }
 
@@ -15,17 +22,17 @@ export async function GET() {
     
     if (authError) {
       console.error("Error fetching auth users:", authError)
-      return NextResponse.json({ error: authError.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
     }
 
     // ดึงข้อมูลเพิ่มเติมจาก admin_users table
     const { data: adminUsers, error: adminError } = await supabaseAdmin
       .from("admin_users")
       .select("*")
-    
+
     if (adminError) {
       console.error("Error fetching admin users:", adminError)
-      return NextResponse.json({ error: adminError.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to fetch users" }, { status: 500 })
     }
 
     // รวมข้อมูลจาก auth.users และ admin_users
@@ -51,10 +58,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // ตรวจสอบสิทธิ์ admin
+    const user = await verifyAdminAuth(request)
+    if (!user) {
+      return forbiddenResponse("Admin access required")
+    }
+
     // ตรวจสอบว่ามี supabaseAdmin หรือไม่
     if (!supabaseAdmin) {
-      return NextResponse.json({ 
-        error: "Admin features not available. Please configure SUPABASE_SERVICE_ROLE_KEY." 
+      return NextResponse.json({
+        error: "Service temporarily unavailable"
       }, { status: 503 })
     }
 
@@ -77,7 +90,7 @@ export async function POST(request: NextRequest) {
 
     if (authError) {
       console.error("Error creating auth user:", authError)
-      return NextResponse.json({ error: authError.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
     }
 
     // ถ้าเป็น admin ให้เพิ่มข้อมูลใน admin_users table
@@ -96,7 +109,7 @@ export async function POST(request: NextRequest) {
         console.error("Error creating admin user:", adminError)
         // ลบผู้ใช้จาก auth ถ้าไม่สามารถสร้าง admin record ได้
         await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-        return NextResponse.json({ error: adminError.message }, { status: 500 })
+        return NextResponse.json({ error: "Failed to create admin user" }, { status: 500 })
       }
     }
 
@@ -129,10 +142,16 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // ตรวจสอบสิทธิ์ admin
+    const user = await verifyAdminAuth(request)
+    if (!user) {
+      return forbiddenResponse("Admin access required")
+    }
+
     // ตรวจสอบว่ามี supabaseAdmin หรือไม่
     if (!supabaseAdmin) {
-      return NextResponse.json({ 
-        error: "Admin features not available. Please configure SUPABASE_SERVICE_ROLE_KEY." 
+      return NextResponse.json({
+        error: "Service temporarily unavailable"
       }, { status: 503 })
     }
 
@@ -153,7 +172,7 @@ export async function PUT(request: NextRequest) {
       
       if (authError) {
         console.error("Error updating auth user:", authError)
-        return NextResponse.json({ error: authError.message }, { status: 500 })
+        return NextResponse.json({ error: "Failed to update user" }, { status: 500 })
       }
     }
 
@@ -202,7 +221,7 @@ export async function PUT(request: NextRequest) {
 
           if (adminError) {
             console.error("Error creating admin user:", adminError)
-            return NextResponse.json({ error: adminError.message }, { status: 500 })
+            return NextResponse.json({ error: "Failed to create admin user" }, { status: 500 })
           }
         } else {
           // อัพเดต admin record ที่มีอยู่
@@ -218,7 +237,7 @@ export async function PUT(request: NextRequest) {
 
           if (adminError) {
             console.error("Error updating admin user:", adminError)
-            return NextResponse.json({ error: adminError.message }, { status: 500 })
+            return NextResponse.json({ error: "Failed to update admin user" }, { status: 500 })
           }
         }
       } else if (role === 'user' && existingAdmin) {
@@ -230,7 +249,7 @@ export async function PUT(request: NextRequest) {
 
         if (deleteError) {
           console.error("Error deleting admin user:", deleteError)
-          return NextResponse.json({ error: deleteError.message }, { status: 500 })
+          return NextResponse.json({ error: "Failed to delete admin user" }, { status: 500 })
         }
       }
     }
@@ -244,10 +263,16 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // ตรวจสอบสิทธิ์ admin
+    const user = await verifyAdminAuth(request)
+    if (!user) {
+      return forbiddenResponse("Admin access required")
+    }
+
     // ตรวจสอบว่ามี supabaseAdmin หรือไม่
     if (!supabaseAdmin) {
-      return NextResponse.json({ 
-        error: "Admin features not available. Please configure SUPABASE_SERVICE_ROLE_KEY." 
+      return NextResponse.json({
+        error: "Service temporarily unavailable"
       }, { status: 503 })
     }
 
@@ -274,7 +299,7 @@ export async function DELETE(request: NextRequest) {
 
     if (authError) {
       console.error("Error deleting auth user:", authError)
-      return NextResponse.json({ error: authError.message }, { status: 500 })
+      return NextResponse.json({ error: "Failed to delete user" }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })

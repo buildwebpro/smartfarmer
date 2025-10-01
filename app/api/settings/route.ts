@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { verifyAdminAuth, unauthorizedResponse } from '@/lib/auth-helpers'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -85,6 +86,12 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  // Require admin authentication
+  const user = await verifyAdminAuth(request)
+  if (!user) {
+    return unauthorizedResponse("Admin access required to modify settings")
+  }
+
   try {
     const body = await request.json()
     const { settings } = body

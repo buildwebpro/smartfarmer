@@ -1,8 +1,10 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { supabase } from '../lib/supabaseClient'
+import { createClient } from '../lib/supabaseBrowser'
 import { signInWithEmailAndGetAdminData, signUpWithEmail, signOut, getAdminUserByEmail } from '../lib/auth'
+
+const supabase = createClient()
 
 interface User {
   id: string

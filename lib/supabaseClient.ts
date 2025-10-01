@@ -6,9 +6,11 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: false, // ปิดการ refresh token อัตโนมัติ
-    persistSession: false,   // ไม่เก็บ session ใน localStorage
-    detectSessionInUrl: false // ไม่ตรวจสอบ session จาก URL
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'sb-auth-token',
   }
 })
 

@@ -158,11 +158,11 @@ export default function BookingStatusPage() {
         {/* Header */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
-            <Image 
-              src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" 
-              alt="โลโก้ บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก." 
-              width={150} 
-              height={60} 
+            <Image
+              src="/images/drone-service-login-logo.webp"
+              alt="โลโก้ บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก."
+              width={150}
+              height={60}
               className="h-12 w-auto"
             />
           </div>

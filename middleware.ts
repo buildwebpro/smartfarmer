@@ -63,19 +63,40 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Admin route protection - ปิดชั่วคราวเพื่อ debug
-  // if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-  //   // ตรวจสอบจาก Supabase cookies (ชื่อ cookies ที่ถูกต้อง)
-  //   const supabaseAuthToken = request.cookies.get('sb-access-token')?.value ||
-  //                             request.cookies.get('supabase-auth-token')?.value ||
-  //                             request.cookies.get('sb-' + process.env.NEXT_PUBLIC_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token')?.value
-    
-  //   // ถ้าไม่มี token ใดๆ เลย ให้ redirect ไปหน้า login
-  //   if (!supabaseAuthToken) {
-  //     console.log('Middleware: No auth token found, redirecting to login')
-  //     return NextResponse.redirect(new URL('/admin/login', request.url))
-  //   }
-  // }
+  // Admin route protection
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+    // ตรวจสอบจาก Supabase cookies
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const projectRef = supabaseUrl?.split('//')[1]?.split('.')[0]
+
+    // Check all possible Supabase cookie patterns
+    const cookieNames = [
+      `sb-${projectRef}-auth-token`,
+      `sb-${projectRef}-auth-token-code-verifier`,
+      'sb-access-token',
+      'supabase-auth-token',
+    ]
+
+    let hasAuthCookie = false
+    for (const cookieName of cookieNames) {
+      const cookie = request.cookies.get(cookieName)
+      if (cookie?.value) {
+        hasAuthCookie = true
+        console.log(`Middleware: Found auth cookie: ${cookieName}`)
+        break
+      }
+    }
+
+    // Debug: log all cookies
+    const allCookies = request.cookies.getAll()
+    console.log('Middleware: All cookies:', allCookies.map(c => c.name))
+
+    // ถ้าไม่มี token ให้ redirect ไปหน้า login
+    if (!hasAuthCookie) {
+      console.log('Middleware: No auth cookie found, redirecting to login')
+      return NextResponse.redirect(new URL('/admin/login', request.url))
+    }
+  }
 
   // CSRF protection for state-changing operations
   if (['POST', 'PUT', 'DELETE'].includes(request.method)) {
@@ -134,15 +155,19 @@ function checkRateLimit(clientIP: string, pathname: string): { allowed: boolean;
 
 function isValidOrigin(origin: string, host: string | null): boolean {
   if (!host) return false
-  
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://drone-booking-app.vercel.app'
   const validOrigins = [
     `https://${host}`,
     `http://${host}`,
-    'https://drone-booking-app.vercel.app',
-    'http://localhost:3000',
-    'http://localhost:3001',
+    baseUrl,
   ]
-  
+
+  // Only allow localhost in development
+  if (process.env.NODE_ENV === 'development') {
+    validOrigins.push('http://localhost:3000', 'http://localhost:3001')
+  }
+
   return validOrigins.includes(origin)
 }
 

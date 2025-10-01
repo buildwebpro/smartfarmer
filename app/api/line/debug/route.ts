@@ -1,7 +1,16 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { verifyAdminAuth, forbiddenResponse } from "@/lib/auth-helpers"
 
-// Debug endpoint to check configuration
-export async function GET() {
+// Debug endpoint to check configuration (Admin only)
+export async function GET(request: NextRequest) {
+  // ตรวจสอบสิทธิ์ admin
+  const user = await verifyAdminAuth(request)
+  if (!user) {
+    return forbiddenResponse("Admin access required")
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://drone-booking-app.vercel.app"
+
   const config = {
     timestamp: new Date().toISOString(),
     environment: {
@@ -10,17 +19,14 @@ export async function GET() {
     },
     lineConfig: {
       hasChannelSecret: !!process.env.LINE_CHANNEL_SECRET,
-      channelSecretLength: process.env.LINE_CHANNEL_SECRET?.length || 0,
       hasChannelAccessToken: !!process.env.LINE_CHANNEL_ACCESS_TOKEN,
-      accessTokenLength: process.env.LINE_CHANNEL_ACCESS_TOKEN?.length || 0,
       hasAdminUserId: !!process.env.ADMIN_LINE_USER_ID,
-      adminUserIdLength: process.env.ADMIN_LINE_USER_ID?.length || 0,
+      hasLiffId: !!process.env.NEXT_PUBLIC_LIFF_ID,
     },
     urls: {
-      baseUrl: "https://drone-booking-app.vercel.app",
-      webhookUrl: "https://drone-booking-app.vercel.app/api/line/webhook",
-      liffUrl: "https://drone-booking-app.vercel.app/line/liff/booking",
-      hasLiffId: !!process.env.NEXT_PUBLIC_LIFF_ID,
+      baseUrl,
+      webhookUrl: `${baseUrl}/api/line/webhook`,
+      liffUrl: `${baseUrl}/line/liff/booking`,
     },
   }
 

@@ -1,6 +1,18 @@
-import { supabase } from './supabaseClient'
+import { createClient } from './supabaseBrowser'
+
+// Create a shared client instance for auth operations
+const getSupabaseClient = () => {
+  if (typeof window === 'undefined') {
+    // Server-side: import server client
+    const { supabase } = require('./supabaseClient')
+    return supabase
+  }
+  // Client-side: use browser client
+  return createClient()
+}
 
 export async function signInWithEmail(email: string, password: string) {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
@@ -9,6 +21,7 @@ export async function signInWithEmail(email: string, password: string) {
 }
 
 export async function signUpWithEmail(email: string, password: string) {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -17,11 +30,13 @@ export async function signUpWithEmail(email: string, password: string) {
 }
 
 export async function signOut() {
+  const supabase = getSupabaseClient()
   const { error } = await supabase.auth.signOut()
   return { error }
 }
 
 export async function getAdminUserByEmail(email: string) {
+  const supabase = getSupabaseClient()
   const { data, error } = await supabase
     .from('admin_users')
     .select('id, email, username, role')
@@ -33,8 +48,9 @@ export async function getAdminUserByEmail(email: string) {
 // ฟังก์ชันใหม่: ล็อคอินและดึงข้อมูล admin ในคราวเดียว
 export async function signInWithEmailAndGetAdminData(email: string, password: string) {
   try {
+    const supabase = getSupabaseClient()
     console.log('[auth.ts] signInWithEmailAndGetAdminData started for email:', email)
-    
+
     // Step 1: ล็อคอิน
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,

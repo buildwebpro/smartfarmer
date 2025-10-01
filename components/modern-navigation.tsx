@@ -8,18 +8,20 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Zap, 
-  Wheat, 
-  Settings, 
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Zap,
+  Wheat,
+  Settings,
   LogOut,
   Search,
   Menu,
   X,
   Users,
-  UserCheck
+  UserCheck,
+  Truck,
+  Package
 } from "lucide-react"
 
 interface NavigationItem {
@@ -46,6 +48,16 @@ const navigationItems: NavigationItem[] = [
     name: "จัดการโดรน",
     href: "/admin/drones",
     icon: Zap,
+  },
+  {
+    name: "จัดการเครื่องจักร",
+    href: "/admin/equipment",
+    icon: Truck,
+  },
+  {
+    name: "ประเภทเครื่องจักร",
+    href: "/admin/equipment/categories",
+    icon: Package,
   },
   {
     name: "จัดการนักบิน",

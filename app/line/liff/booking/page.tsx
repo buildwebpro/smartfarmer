@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
-import { MapPin, Calculator, CreditCard, Navigation, FileText } from "lucide-react"
+import { MapPin, Calculator, CreditCard, Navigation, FileText, Zap, Truck } from "lucide-react"
 import { th } from "date-fns/locale"
 import Image from "next/image"
 import Link from "next/link"
@@ -27,7 +27,22 @@ interface SprayType {
   pricePerRai: number
 }
 
+interface Equipment {
+  id: string
+  name: string
+  model: string
+  rental_price_per_day: number
+  deposit_amount: number
+  category?: {
+    name: string
+  }
+}
+
 export default function BookingPage() {
+  const [serviceType, setServiceType] = useState<'drone' | 'equipment'>('drone')
+  const [equipment, setEquipment] = useState<Equipment[]>([])
+  const [selectedEquipment, setSelectedEquipment] = useState<string>('')
+
   const [formData, setFormData] = useState({
     customerName: "",
     phoneNumber: "",
@@ -66,28 +81,37 @@ export default function BookingPage() {
 
   useEffect(() => {
     calculatePrice()
+  }, [formData.areaSize, formData.cropType, formData.sprayType, selectedEquipment, serviceType])
+
+  useEffect(() => {
     // ดึงข้อมูลชนิดพืชและสารพ่นจาก API
     const fetchTypes = async () => {
       setLoadingTypes(true) // เริ่มแสดงสถานะ loading
       try {
         // ดึงข้อมูลพร้อมกัน
-        const [cropResponse, sprayResponse] = await Promise.all([
+        const [cropResponse, sprayResponse, equipmentResponse] = await Promise.all([
           fetch("/api/crop-types"),
-          fetch("/api/spray-types")
+          fetch("/api/spray-types"),
+          fetch("/api/equipment?status=available")
         ])
-        
-        const [cropResult, sprayResult] = await Promise.all([
+
+        const [cropResult, sprayResult, equipmentResult] = await Promise.all([
           cropResponse.json(),
-          sprayResponse.json()
+          sprayResponse.json(),
+          equipmentResponse.json()
         ])
-        
+
         // อัพเดทข้อมูลใหม่จาก API หากมี
         if (cropResult.data && cropResult.data.length > 0) {
           setCropTypes(cropResult.data)
         }
-        
+
         if (sprayResult.data && sprayResult.data.length > 0) {
           setSprayTypes(sprayResult.data)
+        }
+
+        if (equipmentResult.success && equipmentResult.data) {
+          setEquipment(equipmentResult.data)
         }
       } catch (error) {
         console.error("Error fetching types:", error)
@@ -97,11 +121,11 @@ export default function BookingPage() {
       }
     }
     fetchTypes()
-    
+
     // ไม่ต้องเช็ค LIFF หรือ LINE login - แค่เซ็ตให้พร้อมใช้งาน
     console.log('📱 [LIFF] Simulated LIFF environment ready');
     setLiffReady(true);
-    
+
     // สร้าง persistent user ID ใน localStorage
     const getOrCreateUserId = () => {
       let userId = localStorage.getItem('guest_user_id');
@@ -114,23 +138,35 @@ export default function BookingPage() {
       }
       return userId;
     };
-    
+
     const userId = getOrCreateUserId();
     setLineUserId(userId);
-  }, [formData.areaSize, formData.cropType, formData.sprayType])
+  }, [])
 
   const calculatePrice = () => {
-    const areaSize = Number.parseFloat(formData.areaSize) || 0
-    const selectedCrop = cropTypes.find((c) => c.id === formData.cropType)
-    const selectedSpray = sprayTypes.find((s) => s.id === formData.sprayType)
+    if (serviceType === 'drone') {
+      const areaSize = Number.parseFloat(formData.areaSize) || 0
+      const selectedCrop = cropTypes.find((c) => c.id === formData.cropType)
+      const selectedSpray = sprayTypes.find((s) => s.id === formData.sprayType)
 
-    if (areaSize && selectedCrop && selectedSpray) {
-      const total = areaSize * (selectedCrop.pricePerRai + selectedSpray.pricePerRai)
-      setTotalPrice(total)
-      setDepositAmount(total * 0.3)
+      if (areaSize && selectedCrop && selectedSpray) {
+        const total = areaSize * (selectedCrop.pricePerRai + selectedSpray.pricePerRai)
+        setTotalPrice(total)
+        setDepositAmount(total * 0.3)
+      } else {
+        setTotalPrice(0)
+        setDepositAmount(0)
+      }
     } else {
-      setTotalPrice(0)
-      setDepositAmount(0)
+      // Equipment rental - daily rate
+      const selectedEquip = equipment.find((e) => e.id === selectedEquipment)
+      if (selectedEquip) {
+        setTotalPrice(selectedEquip.rental_price_per_day)
+        setDepositAmount(selectedEquip.deposit_amount)
+      } else {
+        setTotalPrice(0)
+        setDepositAmount(0)
+      }
     }
   }
 
@@ -171,32 +207,39 @@ export default function BookingPage() {
       alert("กรุณากรอกชื่อ-นามสกุล")
       return
     }
-    
+
     if (!formData.phoneNumber.trim()) {
       alert("กรุณากรอกเบอร์โทรศัพท์")
       return
     }
-    
-    if (!formData.areaSize) {
-      alert("กรุณากรอกจำนวนไร่")
-      return
+
+    if (serviceType === 'drone') {
+      if (!formData.areaSize) {
+        alert("กรุณากรอกจำนวนไร่")
+        return
+      }
+
+      if (!formData.cropType) {
+        alert("กรุณาเลือกชนิดพืช")
+        return
+      }
+
+      if (!formData.sprayType) {
+        alert("กรุณาเลือกชนิดสารพ่น")
+        return
+      }
+
+      if (!formData.gpsCoordinates.trim()) {
+        alert("กรุณาระบุที่อยู่ หรือใช้ GPS แชร์ตำแหน่ง")
+        return
+      }
+    } else {
+      if (!selectedEquipment) {
+        alert("กรุณาเลือกเครื่องจักร")
+        return
+      }
     }
-    
-    if (!formData.cropType) {
-      alert("กรุณาเลือกชนิดพืช")
-      return
-    }
-    
-    if (!formData.sprayType) {
-      alert("กรุณาเลือกชนิดสารพ่น")
-      return
-    }
-    
-    if (!formData.gpsCoordinates.trim()) {
-      alert("กรุณาระบุที่อยู่ หรือใช้ GPS แชร์ตำแหน่ง")
-      return
-    }
-    
+
     if (!formData.selectedDate) {
       alert("กรุณาเลือกวันที่ต้องการใช้บริการ")
       return
@@ -225,14 +268,29 @@ export default function BookingPage() {
 
     setIsSubmitting(true)
 
-    const bookingData = {
-      ...formData,
-      lineUserId, // ส่ง userId ไปกับข้อมูล order
-      totalPrice,
-      depositAmount,
-      status: "pending_payment",
-      createdAt: new Date().toISOString(),
-    }
+    const bookingData = serviceType === 'drone'
+      ? {
+          ...formData,
+          lineUserId,
+          totalPrice,
+          depositAmount,
+          status: "pending_payment",
+          createdAt: new Date().toISOString(),
+          booking_type: "service",
+        }
+      : {
+          customerName: formData.customerName,
+          phoneNumber: formData.phoneNumber,
+          selectedDate: formData.selectedDate,
+          notes: formData.notes,
+          lineUserId,
+          totalPrice,
+          depositAmount,
+          status: "pending_payment",
+          createdAt: new Date().toISOString(),
+          booking_type: "rental",
+          equipment_id: selectedEquipment,
+        }
 
     try {
       const response = await fetch("/api/bookings", {
@@ -265,11 +323,11 @@ export default function BookingPage() {
         {/* Logo Section */}
         <div className="text-center mb-6">
           <div className="flex justify-center mb-4">
-            <Image 
-              src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" 
-              alt="โลโก้ บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก." 
-              width={150} 
-              height={60} 
+            <Image
+              src="/images/drone-service-login-logo.webp"
+              alt="โลโก้ บ.พระพิรุนทร์ เซอร์วิส โพรไวเดอร์ จก."
+              width={150}
+              height={60}
               className="h-12 w-auto"
             />
           </div>
@@ -281,9 +339,9 @@ export default function BookingPage() {
         </div>
         
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">จองบริการพ่นยาโดรน</h1>
-          <p className="text-gray-600">กรอกข้อมูลเพื่อจองบริการพ่นยาโดรน</p>
-          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">จองบริการทางการเกษตร</h1>
+          <p className="text-gray-600">เลือกประเภทบริการและกรอกข้อมูล</p>
+
           {/* My Bookings Link */}
           <div className="mt-4">
             <Link href="/line/liff/my-bookings" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-medium">
@@ -292,15 +350,61 @@ export default function BookingPage() {
             </Link>
           </div>
         </div>
+
+        {/* Service Type Selection */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>เลือกประเภทบริการ</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                type="button"
+                onClick={() => setServiceType('drone')}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  serviceType === 'drone'
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 hover:border-green-300'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Zap className={`w-8 h-8 ${serviceType === 'drone' ? 'text-green-600' : 'text-gray-400'}`} />
+                  <span className={`font-semibold ${serviceType === 'drone' ? 'text-green-700' : 'text-gray-600'}`}>
+                    พ่นยาโดรน
+                  </span>
+                  <span className="text-xs text-gray-500">บริการพ่นยาด้วยโดรน</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setServiceType('equipment')}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  serviceType === 'equipment'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <Truck className={`w-8 h-8 ${serviceType === 'equipment' ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <span className={`font-semibold ${serviceType === 'equipment' ? 'text-blue-700' : 'text-gray-600'}`}>
+                    เช่าเครื่องจักร
+                  </span>
+                  <span className="text-xs text-gray-500">เช่ารถไถ รถเกี่ยว ฯลฯ</span>
+                </div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
         {showQR ? (
           <div className="flex flex-col items-center justify-center py-8">
             {/* Logo ในหน้า QR */}
             <div className="mb-6">
-              <Image 
-                src="https://drone-booking-app.vercel.app/images/drone-service-login-logo.webp" 
-                alt="โลโก้ บ.พระพิรุนทร์" 
-                width={120} 
-                height={48} 
+              <Image
+                src="/images/drone-service-login-logo.webp"
+                alt="โลโก้ บ.พระพิรุนทร์"
+                width={120}
+                height={48}
                 className="h-10 w-auto"
               />
             </div>
@@ -353,120 +457,174 @@ export default function BookingPage() {
               </CardContent>
             </Card>
 
-            {/* Service Details */}
+            {/* Service Details - Conditional based on service type */}
             <Card>
               <CardHeader>
                 <CardTitle>รายละเอียดบริการ</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="areaSize">จำนวนไร่ *</Label>
-                    <Input
-                      id="areaSize"
-                      type="number"
-                      step="0.1"
-                      value={formData.areaSize}
-                      onChange={(e) => setFormData({ ...formData, areaSize: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="cropType">ชนิดพืช *</Label>
-                    <Select
-                      value={formData.cropType}
-                      onValueChange={(value) => setFormData({ ...formData, cropType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกชนิดพืช" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cropTypes.length === 0 ? (
-                          <SelectItem value="no-data" disabled>
-                            ไม่พบข้อมูลชนิดพืช
-                          </SelectItem>
-                        ) : (
-                          cropTypes.map((crop) => (
-                            <SelectItem key={crop.id} value={crop.id}>
-                              {crop.name} ({crop.pricePerRai ? `${crop.pricePerRai} บาท/ไร่` : 'ไม่ระบุราคา'})
-                            </SelectItem>
-                          ))
-                        )}
-                        {loadingTypes && (
-                          <div className="px-2 py-1 text-xs text-blue-600 italic">
-                            🔄 กำลังอัพเดทข้อมูลล่าสุด...
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="sprayType">ชนิดสารพ่น *</Label>
-                    <Select
-                      value={formData.sprayType}
-                      onValueChange={(value) => setFormData({ ...formData, sprayType: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกสารพ่น" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {sprayTypes.length === 0 ? (
-                          <SelectItem value="no-data" disabled>
-                            ไม่พบข้อมูลสารพ่น
-                          </SelectItem>
-                        ) : (
-                          sprayTypes.map((spray) => (
-                            <SelectItem key={spray.id} value={spray.id}>
-                              {spray.name} ({spray.pricePerRai ? `${spray.pricePerRai} บาท/ไร่` : 'ไม่ระบุราคา'})
-                            </SelectItem>
-                          ))
-                        )}
-                        {loadingTypes && (
-                          <div className="px-2 py-1 text-xs text-blue-600 italic">
-                            🔄 กำลังอัพเดทข้อมูลล่าสุด...
-                          </div>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                {serviceType === 'drone' ? (
+                  <>
+                    {/* Drone Service Fields */}
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="areaSize">จำนวนไร่ *</Label>
+                        <Input
+                          id="areaSize"
+                          type="number"
+                          step="0.1"
+                          value={formData.areaSize}
+                          onChange={(e) => setFormData({ ...formData, areaSize: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="cropType">ชนิดพืช *</Label>
+                        <Select
+                          value={formData.cropType}
+                          onValueChange={(value) => setFormData({ ...formData, cropType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="เลือกชนิดพืช" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cropTypes.length === 0 ? (
+                              <SelectItem value="no-data" disabled>
+                                ไม่พบข้อมูลชนิดพืช
+                              </SelectItem>
+                            ) : (
+                              cropTypes.map((crop) => (
+                                <SelectItem key={crop.id} value={crop.id}>
+                                  {crop.name} ({crop.pricePerRai ? `${crop.pricePerRai} บาท/ไร่` : 'ไม่ระบุราคา'})
+                                </SelectItem>
+                              ))
+                            )}
+                            {loadingTypes && (
+                              <div className="px-2 py-1 text-xs text-blue-600 italic">
+                                🔄 กำลังอัพเดทข้อมูลล่าสุด...
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="sprayType">ชนิดสารพ่น *</Label>
+                        <Select
+                          value={formData.sprayType}
+                          onValueChange={(value) => setFormData({ ...formData, sprayType: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="เลือกสารพ่น" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sprayTypes.length === 0 ? (
+                              <SelectItem value="no-data" disabled>
+                                ไม่พบข้อมูลสารพ่น
+                              </SelectItem>
+                            ) : (
+                              sprayTypes.map((spray) => (
+                                <SelectItem key={spray.id} value={spray.id}>
+                                  {spray.name} ({spray.pricePerRai ? `${spray.pricePerRai} บาท/ไร่` : 'ไม่ระบุราคา'})
+                                </SelectItem>
+                              ))
+                            )}
+                            {loadingTypes && (
+                              <div className="px-2 py-1 text-xs text-blue-600 italic">
+                                🔄 กำลังอัพเดทข้อมูลล่าสุด...
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-                <div>
-                  <Label htmlFor="gpsCoordinates">ที่อยู่/พิกัด GPS *</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="gpsCoordinates"
-                      placeholder="ระบุที่อยู่ หรือพิกัด GPS"
-                      value={formData.gpsCoordinates}
-                      onChange={(e) => setFormData({ ...formData, gpsCoordinates: e.target.value })}
-                      className="flex-1"
-                    />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={handleGetLocation}
-                      disabled={gettingLocation}
-                      className="px-3"
-                      title="ใช้ตำแหน่งปัจจุบัน"
-                    >
-                      {gettingLocation ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                      ) : (
-                        <Navigation className="h-4 w-4" />
+                    <div>
+                      <Label htmlFor="gpsCoordinates">ที่อยู่/พิกัด GPS *</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="gpsCoordinates"
+                          placeholder="ระบุที่อยู่ หรือพิกัด GPS"
+                          value={formData.gpsCoordinates}
+                          onChange={(e) => setFormData({ ...formData, gpsCoordinates: e.target.value })}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleGetLocation}
+                          disabled={gettingLocation}
+                          className="px-3"
+                          title="ใช้ตำแหน่งปัจจุบัน"
+                        >
+                          {gettingLocation ? (
+                            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                          ) : (
+                            <Navigation className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      {formData.gpsCoordinates && formData.gpsCoordinates.includes(',') && (
+                        <p className="text-sm text-green-600 mt-1">
+                          📍 พิกัด GPS ถูกบันทึกแล้ว
+                        </p>
                       )}
-                    </Button>
-                  </div>
-                  {formData.gpsCoordinates && formData.gpsCoordinates.includes(',') && (
-                    <p className="text-sm text-green-600 mt-1">
-                      📍 พิกัด GPS ถูกบันทึกแล้ว
-                    </p>
-                  )}
-                  {formData.gpsCoordinates && !formData.gpsCoordinates.includes(',') && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      📍 ที่อยู่ที่ระบุ
-                    </p>
-                  )}
-                </div>
+                      {formData.gpsCoordinates && !formData.gpsCoordinates.includes(',') && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          📍 ที่อยู่ที่ระบุ
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Equipment Rental Fields */}
+                    <div>
+                      <Label htmlFor="equipment">เลือกเครื่องจักร *</Label>
+                      <Select
+                        value={selectedEquipment}
+                        onValueChange={(value) => setSelectedEquipment(value)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกเครื่องจักรที่ต้องการเช่า" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {equipment.length === 0 ? (
+                            <SelectItem value="no-data" disabled>
+                              ไม่พบเครื่องจักรพร้อมให้เช่า
+                            </SelectItem>
+                          ) : (
+                            equipment.map((equip) => (
+                              <SelectItem key={equip.id} value={equip.id}>
+                                {equip.name} - {equip.model} (฿{equip.rental_price_per_day.toLocaleString()}/วัน)
+                              </SelectItem>
+                            ))
+                          )}
+                          {loadingTypes && (
+                            <div className="px-2 py-1 text-xs text-blue-600 italic">
+                              🔄 กำลังโหลดข้อมูล...
+                            </div>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {selectedEquipment && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded-lg">
+                          {(() => {
+                            const selected = equipment.find(e => e.id === selectedEquipment)
+                            return selected ? (
+                              <div className="space-y-1 text-sm">
+                                <p className="font-semibold text-blue-900">{selected.name}</p>
+                                <p className="text-gray-600">รุ่น: {selected.model}</p>
+                                {selected.category && <p className="text-gray-600">ประเภท: {selected.category.name}</p>}
+                                <p className="text-green-600 font-medium">ค่าเช่า: ฿{selected.rental_price_per_day.toLocaleString()}/วัน</p>
+                                <p className="text-orange-600">เงินมัดจำ: ฿{selected.deposit_amount.toLocaleString()}</p>
+                              </div>
+                            ) : null
+                          })()}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -516,26 +674,33 @@ export default function BookingPage() {
             </Card>
 
             {/* Price Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calculator className="h-5 w-5" />
-                  สรุปราคา
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>ราคารวมทั้งหมด:</span>
-                    <span className="font-semibold">{totalPrice.toLocaleString()} บาท</span>
+            {(totalPrice > 0 || depositAmount > 0) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="h-5 w-5" />
+                    สรุปราคา
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>{serviceType === 'drone' ? 'ราคารวมทั้งหมด:' : 'ค่าเช่าต่อวัน:'}</span>
+                      <span className="font-semibold">{totalPrice.toLocaleString()} บาท</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-bold text-green-600">
+                      <span>ยอดมัดจำ{serviceType === 'drone' ? ' (30%)' : ''}:</span>
+                      <span>{depositAmount.toLocaleString()} บาท</span>
+                    </div>
+                    {serviceType === 'equipment' && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        * สำหรับการเช่าเครื่องจักร ค่าเช่าจะคำนวณตามจำนวนวันที่เช่าจริง
+                      </p>
+                    )}
                   </div>
-                  <div className="flex justify-between text-lg font-bold text-green-600">
-                    <span>ยอดมัดจำ (30%):</span>
-                    <span>{depositAmount.toLocaleString()} บาท</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Notes */}
             <Card>
