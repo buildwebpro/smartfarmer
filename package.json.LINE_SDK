@@ -1,0 +1,6 @@
+{
+  "name": "LINE SDK Dependencies",
+  "description": "Run this command to install LINE SDK",
+  "command": "npm install @line/bot-sdk",
+  "note": "Required for LINE Messaging API integration"
+}
