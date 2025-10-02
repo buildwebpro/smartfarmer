@@ -1,14 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { type NextRequest, NextResponse } from 'next/server'
 
 // GET /api/jobs/[id] - Get single job with details
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const jobId = params.id
+    const { id: jobId } = await context.params
 
     const { data, error } = await supabase
       .from('job_postings')
@@ -85,12 +85,12 @@ export async function GET(
 
 // DELETE /api/jobs/[id] - Cancel/Delete job
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
-    const jobId = params.id
+    const { id: jobId } = await context.params
 
     const { error } = await supabase
       .from('job_postings')
