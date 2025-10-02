@@ -1,4 +1,4 @@
-# 🚀 AgriConnect v2.0 - Quick Start Guide
+# 🚀 SmartFarmer v2.0 - Quick Start Guide
 
 เริ่มต้นใช้งานภายใน **10 นาที**!
 
@@ -32,7 +32,7 @@
 2. คลิก "New query"
 3. เปิดไฟล์ `scripts/agriconnect-v2-migration.sql` → คัดลอกทั้งหมด
 4. Paste ใน SQL Editor → คลิก "Run"
-5. ✅ ควรเห็น: "AgriConnect v2.0 Migration Completed Successfully!"
+5. ✅ ควรเห็น: "SmartFarmer v2.0 Migration Completed Successfully!"
 
 6. สร้าง query ใหม่อีกครั้ง
 7. เปิดไฟล์ `scripts/agriconnect-v2-rls-policies.sql` → คัดลอกทั้งหมด
@@ -175,7 +175,7 @@ curl http://localhost:3000/api/service-providers?verified=true
 
 ## 📚 เอกสารเพิ่มเติม
 
-- **Full README:** [AGRICONNECT_V2_README.md](./AGRICONNECT_V2_README.md)
+- **Full README:** [SMARTFARMER_V2_README.md](./SMARTFARMER_V2_README.md)
 - **Database Schema:** ดูใน migration script
 - **API Docs:** ดูใน README
 
@@ -183,7 +183,7 @@ curl http://localhost:3000/api/service-providers?verified=true
 
 ## 🎉 เสร็จแล้ว!
 
-ตอนนี้คุณมีระบบ AgriConnect v2.0 พร้อมใช้งานแล้ว! 🌾
+ตอนนี้คุณมีระบบ SmartFarmer v2.0 พร้อมใช้งานแล้ว! 🌾
 
 **Next Steps:**
 

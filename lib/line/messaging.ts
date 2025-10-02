@@ -201,7 +201,7 @@ export function createJobCompletedNotification(data: {
           {
             type: 'text',
             text: data.recipientType === 'farmer'
-              ? 'ขอบคุณที่ใช้บริการ AgriConnect'
+              ? 'ขอบคุณที่ใช้บริการ SmartFarmer'
               : 'คุณได้ทำงานเสร็จสมบูรณ์แล้ว',
             margin: 'md',
             wrap: true

@@ -17,8 +17,8 @@
 3. คลิก **"Create a new channel"**
 4. เลือก **"Messaging API"**
 5. กรอกข้อมูล:
-   - Channel name: `AgriConnect Bot`
-   - Channel description: `Notification and support bot for AgriConnect`
+   - Channel name: `SmartFarmer Bot`
+   - Channel description: `Notification and support bot for SmartFarmer`
    - Category: `Productivity`
    - Subcategory: `Business tools`
 6. คลิก "Create"
@@ -109,7 +109,7 @@ LINE_LOGIN_CHANNEL_SECRET=efad6ca45c1dac3927f7979deefe053c
     "height": 1686
   },
   "selected": true,
-  "name": "AgriConnect - Farmer Menu",
+  "name": "SmartFarmer - Farmer Menu",
   "chatBarText": "เมนู",
   "areas": [
     {
@@ -328,7 +328,7 @@ LINE_LOGIN_CHANNEL_SECRET=efad6ca45c1dac3927f7979deefe053c
         },
         {
           "type": "text",
-          "text": "ขอบคุณที่ใช้บริการ AgriConnect",
+          "text": "ขอบคุณที่ใช้บริการ SmartFarmer",
           "margin": "md"
         },
         {
@@ -428,7 +428,7 @@ curl -X POST https://api.line.me/v2/bot/message/push \
     "to": "U1234567890abcdef",
     "messages": [{
       "type": "text",
-      "text": "Test notification from AgriConnect"
+      "text": "Test notification from SmartFarmer"
     }]
   }'
 ```

@@ -7,7 +7,7 @@
 3. คลิก "Create a new channel"
 4. เลือก **"LINE Login"**
 5. กรอกข้อมูล:
-   - Channel name: `AgriConnect`
+   - Channel name: `SmartFarmer`
    - Channel description: `Marketplace for Agriculture`
    - App types: เลือก `Web app`
 6. คลิก "Create"
@@ -49,7 +49,7 @@ NEXT_PUBLIC_LINE_CALLBACK_URL=http://localhost:3000/auth/callback
 1. ไปที่แท็บ **"LIFF"**
 2. คลิก "Add"
 3. กรอก:
-   - LIFF app name: `AgriConnect App`
+   - LIFF app name: `SmartFarmer App`
    - Size: `Full`
    - Endpoint URL: `https://your-domain.com/liff`
 4. คัดลอก **LIFF ID**
