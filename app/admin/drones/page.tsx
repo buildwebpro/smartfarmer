@@ -413,14 +413,20 @@ export default function DronesPage() {
 
   const fetchDronesAndPilots = async () => {
     try {
+      console.log('[Drones Page] Fetching drones and pilots...')
+
       // Fetch drones and pilots from APIs
       const [dronesResponse, pilotsResponse] = await Promise.all([
         fetch('/api/drones'),
         fetch('/api/pilots')
       ])
 
+      console.log('[Drones Page] Drones response status:', dronesResponse.status)
+
       if (dronesResponse.ok) {
         const dronesData = await dronesResponse.json()
+        console.log('[Drones Page] Drones data:', dronesData)
+
         if (dronesData.data) {
           const transformedDrones = dronesData.data.map((drone: any) => ({
             id: drone.id.toString(),
@@ -435,8 +441,14 @@ export default function DronesPage() {
             nextMaintenance: drone.nextMaintenance || null,
             location: drone.location || "ไม่ทราบตำแหน่ง",
           }))
+          console.log('[Drones Page] Transformed drones:', transformedDrones.length, 'items')
           setDrones(transformedDrones)
+        } else {
+          console.log('[Drones Page] No drones data in response')
         }
+      } else {
+        const errorData = await dronesResponse.json()
+        console.error('[Drones Page] Error response:', errorData)
       }
 
       if (pilotsResponse.ok) {
@@ -612,6 +624,7 @@ export default function DronesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-16">ลำดับ</TableHead>
                 <TableHead>ชื่อโดรน</TableHead>
                 <TableHead>รุ่น</TableHead>
                 <TableHead>สถานะ</TableHead>
@@ -623,8 +636,9 @@ export default function DronesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {drones.map((drone) => (
+              {drones.map((drone, index) => (
                 <TableRow key={drone.id}>
+                  <TableCell className="font-medium text-gray-500">{index + 1}</TableCell>
                   <TableCell className="font-medium">{drone.name}</TableCell>
                   <TableCell>{drone.model}</TableCell>
                   <TableCell>{getStatusBadge(drone.status)}</TableCell>

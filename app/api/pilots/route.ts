@@ -3,20 +3,35 @@ import { supabase } from "@/lib/supabaseClient"
 
 export async function GET() {
   try {
+    console.log('[Pilots API] Fetching pilots...')
+
     const { data, error } = await supabase
       .from("pilots")
       .select("*")
       .order("created_at", { ascending: false })
-    
+
     if (error) {
-      console.error("Error fetching pilots:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      console.error("[Pilots API] Supabase error:", error)
+      return NextResponse.json({
+        success: false,
+        error: error.message,
+        details: error
+      }, { status: 500 })
     }
-    
-    return NextResponse.json({ data })
-  } catch (error) {
-    console.error("Error in GET /api/pilots:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+
+    console.log('[Pilots API] Query successful, count:', data?.length || 0)
+
+    return NextResponse.json({
+      success: true,
+      data: data || []
+    })
+  } catch (error: any) {
+    console.error("[Pilots API] Exception:", error)
+    return NextResponse.json({
+      success: false,
+      error: error?.message || "Internal server error",
+      details: error
+    }, { status: 500 })
   }
 }
 
