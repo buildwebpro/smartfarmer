@@ -4,6 +4,8 @@ import { verifyAdminAuth, unauthorizedResponse } from "@/lib/auth-helpers"
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('[Equipment API] Fetching equipment...')
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const status = searchParams.get('status')
@@ -12,8 +14,7 @@ export async function GET(request: NextRequest) {
       .from("equipment")
       .select(`
         *,
-        category:equipment_categories(id, name, icon),
-        operator:operators(id, name, phone)
+        category:equipment_categories(id, name, icon)
       `)
       .eq('is_active', true)
       .order("name", { ascending: true })
@@ -26,20 +27,31 @@ export async function GET(request: NextRequest) {
       query = query.eq('status', status)
     }
 
+    console.log('[Equipment API] Executing query...')
     const { data, error } = await query
 
     if (error) {
-      console.error("Error fetching equipment:", error)
-      return NextResponse.json({ error: "Failed to fetch equipment" }, { status: 500 })
+      console.error("[Equipment API] Supabase error:", error)
+      return NextResponse.json({
+        success: false,
+        error: error.message,
+        details: error
+      }, { status: 500 })
     }
+
+    console.log('[Equipment API] Query successful, count:', data?.length || 0)
 
     return NextResponse.json({
       success: true,
-      data,
+      data: data || [],
     })
-  } catch (error) {
-    console.error("Error fetching equipment:", error)
-    return NextResponse.json({ error: "Failed to fetch equipment" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Equipment API] Exception:", error)
+    return NextResponse.json({
+      success: false,
+      error: error?.message || "Failed to fetch equipment",
+      details: error
+    }, { status: 500 })
   }
 }
 

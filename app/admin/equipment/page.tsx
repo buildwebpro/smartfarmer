@@ -75,10 +75,17 @@ export default function EquipmentPage() {
   const fetchEquipment = async () => {
     try {
       setLoading(true)
+      console.log('Fetching equipment from API...')
       const response = await fetch('/api/equipment')
       const result = await response.json()
+      console.log('Equipment API response:', { status: response.status, result })
+
       if (result.success) {
+        console.log('Equipment data:', result.data)
         setEquipment(result.data)
+      } else {
+        console.error('API returned success: false', result)
+        toast.error('ไม่สามารถโหลดข้อมูลเครื่องจักรได้')
       }
     } catch (error) {
       console.error('Error fetching equipment:', error)
