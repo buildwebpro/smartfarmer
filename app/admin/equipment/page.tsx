@@ -331,6 +331,29 @@ function EquipmentFormDialog({ open, onClose, categories, equipment, onSuccess }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate required fields
+    if (!formData.category_id) {
+      toast.error('กรุณาเลือกประเภทเครื่องจักร')
+      return
+    }
+    if (!formData.name) {
+      toast.error('กรุณากรอกชื่อเครื่องจักร')
+      return
+    }
+    if (!formData.model) {
+      toast.error('กรุณากรอกรุ่นเครื่องจักร')
+      return
+    }
+    if (!formData.rental_price_per_day || formData.rental_price_per_day <= 0) {
+      toast.error('กรุณากรอกค่าเช่าต่อวันที่ถูกต้อง')
+      return
+    }
+    if (!formData.deposit_amount || formData.deposit_amount <= 0) {
+      toast.error('กรุณากรอกจำนวนเงินมัดจำที่ถูกต้อง')
+      return
+    }
+
     setSaving(true)
 
     try {
@@ -338,21 +361,28 @@ function EquipmentFormDialog({ open, onClose, categories, equipment, onSuccess }
       const method = equipment ? 'PUT' : 'POST'
       const body = equipment ? { id: equipment.id, ...formData } : formData
 
+      console.log('Sending request:', { method, url, body })
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
 
+      const result = await response.json()
+      console.log('Response:', { status: response.status, result })
+
       if (response.ok) {
         toast.success(equipment ? 'อัปเดตเครื่องจักรสำเร็จ' : 'เพิ่มเครื่องจักรสำเร็จ')
         onSuccess()
       } else {
-        toast.error('เกิดข้อผิดพลาด')
+        const errorMsg = result.error || 'เกิดข้อผิดพลาด'
+        toast.error(errorMsg)
+        console.error('Server error:', result)
       }
     } catch (error) {
       console.error('Error saving equipment:', error)
-      toast.error('เกิดข้อผิดพลาด')
+      toast.error('เกิดข้อผิดพลาดในการเชื่อมต่อกับเซิร์ฟเวอร์')
     } finally {
       setSaving(false)
     }
