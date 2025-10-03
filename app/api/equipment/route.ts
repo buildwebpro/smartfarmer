@@ -131,12 +131,19 @@ export async function PUT(request: NextRequest) {
   }
 
   try {
+    console.log('[Equipment API] Updating equipment...')
+
     const body = await request.json()
     const { id, ...updates } = body
 
     if (!id) {
-      return NextResponse.json({ error: "Equipment ID is required" }, { status: 400 })
+      return NextResponse.json({
+        success: false,
+        error: "Equipment ID is required"
+      }, { status: 400 })
     }
+
+    console.log('[Equipment API] Updating equipment ID:', id, 'with:', updates)
 
     // Convert price fields to numbers if present
     if (updates.rental_price_per_day) {
@@ -157,17 +164,25 @@ export async function PUT(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("Error updating equipment:", error)
-      return NextResponse.json({ error: "Failed to update equipment" }, { status: 500 })
+      console.error("[Equipment API] Error updating equipment:", error)
+      return NextResponse.json({
+        success: false,
+        error: error.message || "Failed to update equipment"
+      }, { status: 500 })
     }
+
+    console.log('[Equipment API] Equipment updated successfully')
 
     return NextResponse.json({
       success: true,
       data,
     })
-  } catch (error) {
-    console.error("Error updating equipment:", error)
-    return NextResponse.json({ error: "Failed to update equipment" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Equipment API] Exception:", error)
+    return NextResponse.json({
+      success: false,
+      error: error?.message || "Failed to update equipment"
+    }, { status: 500 })
   }
 }
 
@@ -179,12 +194,19 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
+    console.log('[Equipment API] Deleting equipment...')
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
     if (!id) {
-      return NextResponse.json({ error: "Equipment ID is required" }, { status: 400 })
+      return NextResponse.json({
+        success: false,
+        error: "Equipment ID is required"
+      }, { status: 400 })
     }
+
+    console.log('[Equipment API] Deleting equipment ID:', id)
 
     // Soft delete - set is_active to false
     const { error } = await supabase
@@ -193,15 +215,23 @@ export async function DELETE(request: NextRequest) {
       .eq("id", id)
 
     if (error) {
-      console.error("Error deleting equipment:", error)
-      return NextResponse.json({ error: "Failed to delete equipment" }, { status: 500 })
+      console.error("[Equipment API] Error deleting equipment:", error)
+      return NextResponse.json({
+        success: false,
+        error: error.message || "Failed to delete equipment"
+      }, { status: 500 })
     }
+
+    console.log('[Equipment API] Equipment deleted successfully')
 
     return NextResponse.json({
       success: true,
     })
-  } catch (error) {
-    console.error("Error deleting equipment:", error)
-    return NextResponse.json({ error: "Failed to delete equipment" }, { status: 500 })
+  } catch (error: any) {
+    console.error("[Equipment API] Exception:", error)
+    return NextResponse.json({
+      success: false,
+      error: error?.message || "Failed to delete equipment"
+    }, { status: 500 })
   }
 }

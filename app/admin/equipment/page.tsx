@@ -99,15 +99,20 @@ export default function EquipmentPage() {
     if (!confirm('คุณต้องการลบเครื่องจักรนี้หรือไม่?')) return
 
     try {
+      console.log('[Equipment] Deleting equipment:', id)
+
       const response = await fetch(`/api/equipment?id=${id}`, {
         method: 'DELETE',
       })
+
+      const result = await response.json()
+      console.log('[Equipment] Delete response:', result)
 
       if (response.ok) {
         toast.success('ลบเครื่องจักรสำเร็จ')
         fetchEquipment()
       } else {
-        toast.error('ไม่สามารถลบเครื่องจักรได้')
+        toast.error(result.error || 'ไม่สามารถลบเครื่องจักรได้')
       }
     } catch (error) {
       console.error('Error deleting equipment:', error)

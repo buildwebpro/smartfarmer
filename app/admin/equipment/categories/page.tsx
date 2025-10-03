@@ -84,18 +84,23 @@ export default function EquipmentCategoriesPage() {
     e.preventDefault()
 
     try {
+      console.log('[Categories] Adding category:', formData)
+
       const response = await fetch('/api/equipment/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
+      const result = await response.json()
+      console.log('[Categories] Add response:', result)
+
       if (response.ok) {
         toast.success('เพิ่มประเภทเครื่องจักรสำเร็จ')
         setIsAddDialogOpen(false)
         fetchCategories()
       } else {
-        toast.error('ไม่สามารถเพิ่มประเภทเครื่องจักรได้')
+        toast.error(result.error || 'ไม่สามารถเพิ่มประเภทเครื่องจักรได้')
       }
     } catch (error) {
       console.error('Error adding category:', error)
@@ -109,6 +114,8 @@ export default function EquipmentCategoriesPage() {
     if (!selectedCategory) return
 
     try {
+      console.log('[Categories] Updating category:', selectedCategory.id, formData)
+
       const response = await fetch('/api/equipment/categories', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -118,12 +125,16 @@ export default function EquipmentCategoriesPage() {
         }),
       })
 
+      const result = await response.json()
+      console.log('[Categories] Update response:', result)
+
       if (response.ok) {
         toast.success('แก้ไขประเภทเครื่องจักรสำเร็จ')
         setIsEditDialogOpen(false)
+        setSelectedCategory(null)
         fetchCategories()
       } else {
-        toast.error('ไม่สามารถแก้ไขประเภทเครื่องจักรได้')
+        toast.error(result.error || 'ไม่สามารถแก้ไขประเภทเครื่องจักรได้')
       }
     } catch (error) {
       console.error('Error updating category:', error)
@@ -135,15 +146,20 @@ export default function EquipmentCategoriesPage() {
     if (!confirm('คุณต้องการลบประเภทนี้หรือไม่?')) return
 
     try {
+      console.log('[Categories] Deleting category:', id)
+
       const response = await fetch(`/api/equipment/categories?id=${id}`, {
         method: 'DELETE',
       })
+
+      const result = await response.json()
+      console.log('[Categories] Delete response:', result)
 
       if (response.ok) {
         toast.success('ลบประเภทสำเร็จ')
         fetchCategories()
       } else {
-        toast.error('ไม่สามารถลบประเภทได้')
+        toast.error(result.error || 'ไม่สามารถลบประเภทได้')
       }
     } catch (error) {
       console.error('Error deleting category:', error)
@@ -223,7 +239,6 @@ export default function EquipmentCategoriesPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ลำดับ</TableHead>
-                  <TableHead>ไอคอน</TableHead>
                   <TableHead>ชื่อประเภท</TableHead>
                   <TableHead>คำอธิบาย</TableHead>
                   <TableHead>สถานะ</TableHead>
@@ -236,11 +251,6 @@ export default function EquipmentCategoriesPage() {
                   .map((category) => (
                     <TableRow key={category.id}>
                       <TableCell>{category.display_order}</TableCell>
-                      <TableCell>
-                        <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center">
-                          <Package className="h-5 w-5 text-gray-600" />
-                        </div>
-                      </TableCell>
                       <TableCell className="font-medium">{category.name}</TableCell>
                       <TableCell className="text-gray-600 max-w-xs truncate">
                         {category.description || '-'}

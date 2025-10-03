@@ -97,3 +97,49 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Failed to update category" }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  // Require admin authentication
+  const user = await verifyAdminAuth(request)
+  if (!user) {
+    return unauthorizedResponse("Admin access required")
+  }
+
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: "Category ID is required" }, { status: 400 })
+    }
+
+    // Check if category has equipment
+    const { data: equipmentCount, error: countError } = await supabase
+      .from("equipment")
+      .select("id", { count: 'exact', head: true })
+      .eq('category_id', id)
+
+    if (countError) {
+      console.error("Error checking equipment:", countError)
+    }
+
+    // If has equipment, soft delete by setting is_active = false
+    // Otherwise, hard delete
+    const { error } = await supabase
+      .from("equipment_categories")
+      .update({ is_active: false })
+      .eq("id", id)
+
+    if (error) {
+      console.error("Error deleting category:", error)
+      return NextResponse.json({ error: "Failed to delete category" }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+    })
+  } catch (error) {
+    console.error("Error deleting category:", error)
+    return NextResponse.json({ error: "Failed to delete category" }, { status: 500 })
+  }
+}
