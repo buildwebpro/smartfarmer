@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
+import { supabase } from "@/lib/supabaseClient"
+import { getAIResponse, shouldUseAI } from "@/lib/gemini/ai-helper"
 
 // LINE Webhook handler
 export async function POST(request: NextRequest) {
@@ -27,19 +29,27 @@ export async function POST(request: NextRequest) {
 
       if (event.type === "message" && event.message.type === "text") {
         const userId = event.source.userId
-        const messageText = event.message.text.toLowerCase()
+        const messageText = event.message.text
+        const lowerMessage = messageText.toLowerCase()
 
         console.log("Message from user:", userId, "text:", messageText)
 
         // Handle different commands
-        if (messageText.includes("จอง") || messageText.includes("booking")) {
-          await handleBookingRequest(userId)
-        } else if (messageText.includes("สถานะ") || messageText.includes("status")) {
+        if (lowerMessage.includes("จองโดรน") || lowerMessage.includes("พ่นยา")) {
+          await handleDroneBookingRequest(userId)
+        } else if (lowerMessage.includes("เช่าเครื่อง") || lowerMessage.includes("เครื่องจักร")) {
+          await handleEquipmentRentalRequest(userId)
+        } else if (lowerMessage.includes("ประวัติ") || lowerMessage.includes("รายการจอง")) {
+          await handleMyBookingsRequest(userId)
+        } else if (lowerMessage.includes("สถานะ") || lowerMessage.includes("ตรวจสอบ")) {
           await handleStatusRequest(userId)
-        } else if (messageText.includes("ราคา") || messageText.includes("price")) {
+        } else if (lowerMessage.includes("ราคา") || lowerMessage.includes("price")) {
           await handlePriceRequest(userId)
-        } else if (messageText.includes("ช่วยเหลือ") || messageText.includes("help")) {
+        } else if (lowerMessage.includes("ช่วยเหลือ") || lowerMessage.includes("help")) {
           await sendHelpMessage(userId)
+        } else if (shouldUseAI(messageText)) {
+          // ใช้ AI ตอบคำถามทั่วไป
+          await handleAIResponse(userId, messageText)
         } else {
           await sendWelcomeMessage(userId)
         }
@@ -47,6 +57,7 @@ export async function POST(request: NextRequest) {
         // User added bot as friend
         console.log("New follower:", event.source.userId)
         await sendWelcomeMessage(event.source.userId)
+        // อาจจะผูก Rich Menu ให้อัตโนมัติ
       }
     }
 
@@ -77,10 +88,8 @@ function verifySignature(body: string, signature: string | null): boolean {
 
   try {
     const hash = crypto.createHmac("sha256", channelSecret).update(body, "utf8").digest("base64")
-
     const isValid = hash === signature
-    console.log("Signature verification:", { isValid, expectedHash: hash, receivedSignature: signature })
-
+    console.log("Signature verification:", { isValid })
     return isValid
   } catch (error) {
     console.error("Error verifying signature:", error)
@@ -88,8 +97,9 @@ function verifySignature(body: string, signature: string | null): boolean {
   }
 }
 
-async function handleBookingRequest(userId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://drone-booking-app.vercel.app"
+// จองบริการโดรนพ่นยา
+async function handleDroneBookingRequest(userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
   const liffUrl = `${baseUrl}/line/liff/booking`
 
   await sendLineMessage(userId, {
@@ -97,18 +107,12 @@ async function handleBookingRequest(userId: string) {
     altText: "จองบริการพ่นยาโดรน",
     contents: {
       type: "bubble",
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "🚁 จองบริการพ่นยาโดรน",
-            weight: "bold",
-            size: "lg",
-            color: "#1DB446",
-          },
-        ],
+      hero: {
+        type: "image",
+        url: "https://via.placeholder.com/800x400/1DB446/FFFFFF?text=%F0%9F%9A%81+Drone+Service",
+        size: "full",
+        aspectRatio: "20:13",
+        aspectMode: "cover",
       },
       body: {
         type: "box",
@@ -116,36 +120,211 @@ async function handleBookingRequest(userId: string) {
         contents: [
           {
             type: "text",
+            text: "🚁 บริการพ่นยาโดรน",
+            weight: "bold",
+            size: "xl",
+            color: "#1DB446",
+          },
+          {
+            type: "text",
             text: "บริการพ่นยาด้วยโดรนที่ทันสมัย รวดเร็ว และมีประสิทธิภาพ",
             wrap: true,
             size: "sm",
             color: "#666666",
+            margin: "md",
           },
           {
             type: "separator",
-            margin: "md",
+            margin: "xl",
           },
           {
             type: "box",
             layout: "vertical",
-            margin: "md",
+            margin: "lg",
+            spacing: "sm",
             contents: [
               {
-                type: "text",
-                text: "✅ โดรน 6 ลำพร้อมให้บริการ",
-                size: "sm",
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "✅", size: "sm", flex: 0 },
+                  { type: "text", text: "โดรนพร้อมให้บริการ 6 ลำ", size: "sm", color: "#555555", margin: "sm" },
+                ],
               },
               {
-                type: "text",
-                text: "✅ นักบินมืออาชีพ",
-                size: "sm",
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "✅", size: "sm", flex: 0 },
+                  { type: "text", text: "นักบินมืออาชีพมีใบอนุญาต", size: "sm", color: "#555555", margin: "sm" },
+                ],
               },
               {
-                type: "text",
-                text: "✅ ราคาเริ่มต้น 50 บาท/ไร่",
-                size: "sm",
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "💰", size: "sm", flex: 0 },
+                  { type: "text", text: "ราคาเริ่มต้น 300 บาท/ไร่", size: "sm", color: "#111111", weight: "bold", margin: "sm" },
+                ],
               },
             ],
+          },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#1DB446",
+            action: {
+              type: "uri",
+              label: "📱 เริ่มจองบริการ",
+              uri: liffUrl,
+            },
+          },
+          {
+            type: "button",
+            style: "link",
+            height: "sm",
+            action: {
+              type: "message",
+              label: "💰 ดูราคาบริการ",
+              text: "ราคา",
+            },
+          },
+        ],
+      },
+    },
+  })
+}
+
+// เช่าเครื่องจักรเกษตร
+async function handleEquipmentRentalRequest(userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+  const liffUrl = `${baseUrl}/line/liff/rental`
+
+  // ดึงข้อมูลเครื่องจักรที่พร้อมให้เช่า
+  const { data: equipment } = await supabase
+    .from("equipment")
+    .select("name, model, rental_price_per_day, category:equipment_categories(name)")
+    .eq("is_active", true)
+    .eq("status", "available")
+    .limit(3)
+
+  const equipmentList = equipment?.map(e => ({
+    type: "box",
+    layout: "baseline",
+    contents: [
+      { type: "text", text: "🚜", size: "sm", flex: 0 },
+      {
+        type: "text",
+        text: `${e.name} - ${e.rental_price_per_day?.toLocaleString()} บาท/วัน`,
+        size: "sm",
+        color: "#555555",
+        margin: "sm",
+        wrap: true
+      },
+    ],
+  })) || []
+
+  await sendLineMessage(userId, {
+    type: "flex",
+    altText: "เช่าเครื่องจักรเกษตร",
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: "🚜 เช่าเครื่องจักรเกษตร",
+            weight: "bold",
+            size: "xl",
+            color: "#1DB446",
+          },
+          {
+            type: "text",
+            text: "เครื่องจักรคุณภาพดี พร้อมให้บริการ",
+            size: "sm",
+            color: "#666666",
+            margin: "md",
+          },
+          {
+            type: "separator",
+            margin: "xl",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "sm",
+            contents: equipmentList.length > 0 ? equipmentList : [
+              {
+                type: "text",
+                text: "กำลังโหลดข้อมูล...",
+                size: "sm",
+                color: "#999999",
+              }
+            ],
+          },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        spacing: "sm",
+        contents: [
+          {
+            type: "button",
+            style: "primary",
+            height: "sm",
+            color: "#1DB446",
+            action: {
+              type: "uri",
+              label: "📋 ดูเครื่องจักรทั้งหมด",
+              uri: liffUrl,
+            },
+          },
+        ],
+      },
+    },
+  })
+}
+
+// ดูประวัติการจอง
+async function handleMyBookingsRequest(userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+  const liffUrl = `${baseUrl}/line/liff/my-bookings`
+
+  await sendLineMessage(userId, {
+    type: "flex",
+    altText: "ประวัติการจอง",
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: "📋 ประวัติการจอง",
+            weight: "bold",
+            size: "xl",
+            color: "#1DB446",
+          },
+          {
+            type: "text",
+            text: "ดูรายการจองและสถานะของคุณ",
+            size: "sm",
+            color: "#666666",
+            margin: "md",
+            wrap: true,
           },
         ],
       },
@@ -157,40 +336,156 @@ async function handleBookingRequest(userId: string) {
             type: "button",
             style: "primary",
             height: "sm",
+            color: "#1DB446",
             action: {
               type: "uri",
-              label: "เริ่มจองบริการ",
+              label: "📱 เปิดดูประวัติ",
               uri: liffUrl,
             },
           },
-          {
-            type: "button",
-            style: "secondary",
-            height: "sm",
-            action: {
-              type: "message",
-              label: "ดูราคาบริการ",
-              text: "ราคา",
-            },
-          },
         ],
-        spacing: "sm",
       },
     },
   })
 }
 
+// ตรวจสอบสถานะ
 async function handleStatusRequest(userId: string) {
+  // ค้นหาการจองล่าสุด
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("line_user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+
+  if (!bookings || bookings.length === 0) {
+    await sendLineMessage(userId, {
+      type: "text",
+      text: "🔍 ไม่พบประวัติการจอง\n\nกรุณาจองบริการก่อนเพื่อดูสถานะครับ",
+    })
+    return
+  }
+
+  const booking = bookings[0]
+  const statusMap: Record<string, string> = {
+    pending_payment: "⏳ รอชำระเงิน",
+    paid: "✅ ชำระเงินแล้ว",
+    assigned: "👨‍✈️ มอบหมายงานแล้ว",
+    in_progress: "🚁 กำลังดำเนินการ",
+    completed: "✨ เสร็จสิ้น",
+    cancelled: "❌ ยกเลิก",
+  }
+
   await sendLineMessage(userId, {
-    type: "text",
-    text: "🔍 กำลังตรวจสอบสถานะการจองของคุณ...\n\nหากยังไม่มีการจอง กรุณาพิมพ์ 'จองบริการ' เพื่อเริ่มจองครับ",
+    type: "flex",
+    altText: "สถานะการจอง",
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: "📊 สถานะการจองล่าสุด",
+            weight: "bold",
+            size: "lg",
+            color: "#1DB446",
+          },
+          {
+            type: "separator",
+            margin: "md",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "sm",
+            contents: [
+              {
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "รหัสจอง:", size: "sm", color: "#aaaaaa", flex: 2 },
+                  { type: "text", text: booking.booking_code, size: "sm", color: "#666666", flex: 3, wrap: true },
+                ],
+              },
+              {
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "สถานะ:", size: "sm", color: "#aaaaaa", flex: 2 },
+                  { type: "text", text: statusMap[booking.status] || booking.status, size: "sm", color: "#111111", weight: "bold", flex: 3 },
+                ],
+              },
+              {
+                type: "box",
+                layout: "baseline",
+                contents: [
+                  { type: "text", text: "ยอดรวม:", size: "sm", color: "#aaaaaa", flex: 2 },
+                  { type: "text", text: `${booking.total_price?.toLocaleString()} บาท`, size: "sm", color: "#666666", flex: 3 },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      footer: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "button",
+            style: "link",
+            height: "sm",
+            action: {
+              type: "message",
+              label: "ดูประวัติทั้งหมด",
+              text: "ประวัติการจอง",
+            },
+          },
+        ],
+      },
+    },
   })
 }
 
+// ดูราคา - ดึงข้อมูลจริงจากฐานข้อมูล
 async function handlePriceRequest(userId: string) {
+  const { data: cropTypes } = await supabase
+    .from("crop_types")
+    .select("name, price_per_rai")
+    .eq("is_active", true)
+    .order("name")
+
+  const { data: sprayTypes } = await supabase
+    .from("spray_types")
+    .select("name, price_per_rai")
+    .eq("is_active", true)
+    .order("name")
+
+  const cropContents = cropTypes?.map(crop => ({
+    type: "box",
+    layout: "baseline",
+    contents: [
+      { type: "text", text: `• ${crop.name}`, size: "sm", flex: 3 },
+      { type: "text", text: `${crop.price_per_rai} บาท/ไร่`, size: "sm", flex: 2, align: "end" as const },
+    ],
+  })) || []
+
+  const sprayContents = sprayTypes?.map(spray => ({
+    type: "box",
+    layout: "baseline",
+    contents: [
+      { type: "text", text: `• ${spray.name}`, size: "sm", flex: 3 },
+      { type: "text", text: `${spray.price_per_rai} บาท/ไร่`, size: "sm", flex: 2, align: "end" as const },
+    ],
+  })) || []
+
   await sendLineMessage(userId, {
     type: "flex",
-    altText: "ราคาบริการพ่นยาโดรน",
+    altText: "ราคาบริการ",
     contents: {
       type: "bubble",
       header: {
@@ -201,7 +496,7 @@ async function handlePriceRequest(userId: string) {
             type: "text",
             text: "💰 ราคาบริการ",
             weight: "bold",
-            size: "lg",
+            size: "xl",
             color: "#1DB446",
           },
         ],
@@ -212,178 +507,46 @@ async function handlePriceRequest(userId: string) {
         contents: [
           {
             type: "text",
-            text: "🌾 ชนิดพืช",
+            text: "🌾 ราคาตามชนิดพืช",
             weight: "bold",
             size: "md",
-            margin: "md",
           },
           {
             type: "box",
             layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• ข้าว",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "50 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• อ้อย",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "70 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• ทุเรียน",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "100 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• มันสำปะหลัง",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "70 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-            ],
+            margin: "md",
+            spacing: "sm",
+            contents: cropContents,
           },
           {
             type: "separator",
-            margin: "md",
+            margin: "xl",
           },
           {
             type: "text",
-            text: "🧪 ชนิดสารพ่น",
+            text: "🧪 ราคาตามชนิดสารพ่น",
             weight: "bold",
             size: "md",
-            margin: "md",
+            margin: "xl",
           },
           {
             type: "box",
             layout: "vertical",
-            contents: [
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• ปุ๋ย",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "100 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• ฮอร์โมน",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "150 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-              {
-                type: "box",
-                layout: "baseline",
-                contents: [
-                  {
-                    type: "text",
-                    text: "• ยาฆ่าหญ้า",
-                    size: "sm",
-                    flex: 3,
-                  },
-                  {
-                    type: "text",
-                    text: "200 บาท/ไร่",
-                    size: "sm",
-                    flex: 2,
-                    align: "end",
-                  },
-                ],
-              },
-            ],
+            margin: "md",
+            spacing: "sm",
+            contents: sprayContents,
           },
           {
             type: "separator",
-            margin: "md",
+            margin: "xl",
           },
           {
             type: "text",
-            text: "📝 ราคารวม = (ราคาพืช + ราคาสาร) × จำนวนไร่\nมัดจำ 30% ของราคารวม",
+            text: "📝 ราคารวม = (ราคาพืช + ราคาสาร) × จำนวนไร่\n💵 มัดจำ 30%",
             size: "xs",
             color: "#666666",
             wrap: true,
-            margin: "md",
+            margin: "lg",
           },
         ],
       },
@@ -395,10 +558,11 @@ async function handlePriceRequest(userId: string) {
             type: "button",
             style: "primary",
             height: "sm",
+            color: "#1DB446",
             action: {
               type: "message",
-              label: "จองบริการ",
-              text: "จองบริการ",
+              label: "จองบริการเลย",
+              text: "จองโดรน",
             },
           },
         ],
@@ -407,30 +571,35 @@ async function handlePriceRequest(userId: string) {
   })
 }
 
+// ใช้ AI ตอบคำถาม
+async function handleAIResponse(userId: string, message: string) {
+  try {
+    const aiResponse = await getAIResponse(message)
+
+    await sendLineMessage(userId, {
+      type: "text",
+      text: `🤖 AI Assistant:\n\n${aiResponse}\n\n---\nพิมพ์ "ช่วยเหลือ" เพื่อดูเมนูทั้งหมด`,
+    })
+  } catch (error) {
+    console.error("AI Response error:", error)
+    await sendWelcomeMessage(userId)
+  }
+}
+
 async function sendWelcomeMessage(userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+
   await sendLineMessage(userId, {
     type: "flex",
-    altText: "ยินดีต้อนรับสู่บริการพ่นยาโดรน",
+    altText: "ยินดีต้อนรับ",
     contents: {
       type: "bubble",
-      header: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "🚁 ยินดีต้อนรับ",
-            weight: "bold",
-            size: "lg",
-            color: "#1DB446",
-          },
-          {
-            type: "text",
-            text: "บริการพ่นยาโดรน",
-            size: "md",
-            color: "#666666",
-          },
-        ],
+      hero: {
+        type: "image",
+        url: "https://via.placeholder.com/800x400/1DB446/FFFFFF?text=Welcome",
+        size: "full",
+        aspectRatio: "20:10",
+        aspectMode: "cover",
       },
       body: {
         type: "box",
@@ -438,31 +607,79 @@ async function sendWelcomeMessage(userId: string) {
         contents: [
           {
             type: "text",
-            text: "คำสั่งที่ใช้ได้:",
+            text: "🌾 พระพิรุนทร์ เซอร์วิส",
             weight: "bold",
-            size: "sm",
+            size: "xl",
+            color: "#1DB446",
           },
           {
             type: "text",
-            text: "• พิมพ์ 'จองบริการ' - เริ่มจองบริการ\n• พิมพ์ 'สถานะ' - ตรวจสอบสถานะ\n• พิมพ์ 'ราคา' - ดูราคาบริการ\n• พิมพ์ 'ช่วยเหลือ' - ดูคำแนะนำ",
-            size: "sm",
-            wrap: true,
-            margin: "md",
+            text: "บริการด้านเกษตรครบวงจร",
+            size: "md",
+            color: "#666666",
+            margin: "sm",
+          },
+          {
+            type: "separator",
+            margin: "lg",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "md",
+            contents: [
+              {
+                type: "text",
+                text: "📱 บริการของเรา:",
+                weight: "bold",
+                size: "sm",
+              },
+              {
+                type: "text",
+                text: "🚁 พ่นยาโดรน - รวดเร็ว ทันสมัย\n🚜 เช่าเครื่องจักร - คุณภาพดี\n📊 ตรวจสอบสถานะ - สะดวก",
+                size: "sm",
+                wrap: true,
+                color: "#555555",
+              },
+            ],
           },
         ],
       },
       footer: {
         type: "box",
         layout: "vertical",
+        spacing: "sm",
         contents: [
           {
             type: "button",
             style: "primary",
             height: "sm",
+            color: "#1DB446",
+            action: {
+              type: "uri",
+              label: "🚁 จองพ่นยาโดรน",
+              uri: `${baseUrl}/line/liff/booking`,
+            },
+          },
+          {
+            type: "button",
+            style: "link",
+            height: "sm",
             action: {
               type: "message",
-              label: "เริ่มจองบริการ",
-              text: "จองบริการ",
+              label: "🚜 เช่าเครื่องจักร",
+              text: "เช่าเครื่องจักร",
+            },
+          },
+          {
+            type: "button",
+            style: "link",
+            height: "sm",
+            action: {
+              type: "message",
+              label: "❓ ถามคำถาม",
+              text: "สอบถามข้อมูล",
             },
           },
         ],
@@ -473,8 +690,74 @@ async function sendWelcomeMessage(userId: string) {
 
 async function sendHelpMessage(userId: string) {
   await sendLineMessage(userId, {
-    type: "text",
-    text: `🆘 ช่วยเหลือ\n\nคำสั่งที่ใช้ได้:\n• "จองบริการ" - เริ่มจองบริการ\n• "สถานะ" - ตรวจสอบสถานะการจอง\n• "ราคา" - ดูราคาบริการ\n• "ช่วยเหลือ" - ดูคำแนะนำนี้\n\nหรือใช้เมนูด้านล่างได้เลยครับ\n\n📞 ติดต่อ: 02-xxx-xxxx`,
+    type: "flex",
+    altText: "ช่วยเหลือ",
+    contents: {
+      type: "bubble",
+      body: {
+        type: "box",
+        layout: "vertical",
+        contents: [
+          {
+            type: "text",
+            text: "🆘 วิธีใช้งาน",
+            weight: "bold",
+            size: "xl",
+            color: "#1DB446",
+          },
+          {
+            type: "separator",
+            margin: "md",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "sm",
+            contents: [
+              {
+                type: "text",
+                text: "📝 คำสั่งที่ใช้ได้:",
+                weight: "bold",
+                size: "sm",
+              },
+              {
+                type: "text",
+                text: "• จองโดรน - จองบริการพ่นยา\n• เช่าเครื่องจักร - เช่าอุปกรณ์\n• ประวัติการจอง - ดูรายการ\n• สถานะ - ตรวจสอบสถานะ\n• ราคา - ดูราคาบริการ\n• ถามอะไรก็ได้ - AI จะตอบ",
+                size: "sm",
+                wrap: true,
+                color: "#555555",
+                margin: "md",
+              },
+            ],
+          },
+          {
+            type: "separator",
+            margin: "lg",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            contents: [
+              {
+                type: "text",
+                text: "📞 ติดต่อเจ้าหน้าที่:",
+                weight: "bold",
+                size: "sm",
+              },
+              {
+                type: "text",
+                text: "โทร: 02-xxx-xxxx\nเวลา: 08:00-18:00 น.",
+                size: "sm",
+                color: "#555555",
+                margin: "sm",
+              },
+            ],
+          },
+        ],
+      },
+    },
   })
 }
 
