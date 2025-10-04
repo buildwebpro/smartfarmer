@@ -205,29 +205,66 @@ async function handleDroneBookingRequest(userId: string) {
 
 // เช่าเครื่องจักรเกษตร
 async function handleEquipmentRentalRequest(userId: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  const liffUrl = `${baseUrl}/line/liff/rental`
-
-  // ดึงข้อมูลเครื่องจักรที่พร้อมให้เช่า
+  // ดึงข้อมูลเครื่องจักรที่พร้อมให้เช่า (เพิ่มเป็น 6 รายการ)
   const { data: equipment } = await supabase
     .from("equipment")
-    .select("name, model, rental_price_per_day, category:equipment_categories(name)")
+    .select("name, model, rental_price_per_day, deposit_amount, category:equipment_categories(name)")
     .eq("is_active", true)
     .eq("status", "available")
-    .limit(3)
+    .limit(6)
 
   const equipmentList = equipment?.map(e => ({
     type: "box",
-    layout: "baseline",
+    layout: "vertical",
+    spacing: "xs",
+    margin: "md",
     contents: [
-      { type: "text", text: "🚜", size: "sm", flex: 0 },
       {
-        type: "text",
-        text: `${e.name} - ${e.rental_price_per_day?.toLocaleString()} บาท/วัน`,
-        size: "sm",
-        color: "#555555",
-        margin: "sm",
-        wrap: true
+        type: "box",
+        layout: "baseline",
+        contents: [
+          { type: "text", text: "🚜", size: "sm", flex: 0 },
+          {
+            type: "text",
+            text: e.name,
+            size: "sm",
+            weight: "bold",
+            color: "#1DB446",
+            margin: "sm",
+            wrap: true,
+            flex: 1,
+          },
+        ],
+      },
+      {
+        type: "box",
+        layout: "baseline",
+        spacing: "sm",
+        contents: [
+          {
+            type: "text",
+            text: `${e.model || '-'}`,
+            size: "xs",
+            color: "#999999",
+            margin: "sm",
+            wrap: true,
+          },
+        ],
+      },
+      {
+        type: "box",
+        layout: "baseline",
+        spacing: "sm",
+        contents: [
+          {
+            type: "text",
+            text: `💰 ${e.rental_price_per_day?.toLocaleString()} บาท/วัน | มัดจำ ${e.deposit_amount?.toLocaleString()} บาท`,
+            size: "xs",
+            color: "#555555",
+            margin: "sm",
+            wrap: true,
+          },
+        ],
       },
     ],
   })) || []
@@ -250,27 +287,53 @@ async function handleEquipmentRentalRequest(userId: string) {
           },
           {
             type: "text",
-            text: "เครื่องจักรคุณภาพดี พร้อมให้บริการ",
+            text: `เครื่องจักรคุณภาพดี พร้อมให้บริการ ${equipment?.length || 0} รายการ`,
             size: "sm",
             color: "#666666",
             margin: "md",
           },
           {
             type: "separator",
-            margin: "xl",
+            margin: "lg",
           },
           {
             type: "box",
             layout: "vertical",
             margin: "lg",
-            spacing: "sm",
+            spacing: "md",
             contents: equipmentList.length > 0 ? equipmentList : [
               {
                 type: "text",
-                text: "กำลังโหลดข้อมูล...",
+                text: "ขออภัย ขณะนี้ไม่มีเครื่องจักรพร้อมให้เช่า",
                 size: "sm",
                 color: "#999999",
+                align: "center",
               }
+            ],
+          },
+          {
+            type: "separator",
+            margin: "lg",
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            margin: "lg",
+            spacing: "xs",
+            contents: [
+              {
+                type: "text",
+                text: "💡 สนใจเช่าเครื่องจักร",
+                size: "xs",
+                color: "#666666",
+              },
+              {
+                type: "text",
+                text: "กรุณาติดต่อเจ้าหน้าที่เพื่อจองและนัดหมายการรับเครื่องจักร",
+                size: "xs",
+                color: "#999999",
+                wrap: true,
+              },
             ],
           },
         ],
@@ -278,7 +341,7 @@ async function handleEquipmentRentalRequest(userId: string) {
       footer: {
         type: "box",
         layout: "vertical",
-        spacing: "sm",
+        spacing: "xs",
         contents: [
           {
             type: "button",
@@ -286,9 +349,19 @@ async function handleEquipmentRentalRequest(userId: string) {
             height: "sm",
             color: "#1DB446",
             action: {
-              type: "uri",
-              label: "📋 ดูเครื่องจักรทั้งหมด",
-              uri: liffUrl,
+              type: "message",
+              label: "📞 ติดต่อเจ้าหน้าที่",
+              text: "ต้องการความช่วยเหลือ",
+            },
+          },
+          {
+            type: "button",
+            style: "link",
+            height: "sm",
+            action: {
+              type: "message",
+              label: "💰 ดูราคาบริการ",
+              text: "ราคา",
             },
           },
         ],
