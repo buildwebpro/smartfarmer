@@ -205,6 +205,8 @@ async function handleDroneBookingRequest(userId: string) {
 
 // เช่าเครื่องจักรเกษตร
 async function handleEquipmentRentalRequest(userId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+
   // ดึงข้อมูลเครื่องจักรที่พร้อมให้เช่า (เพิ่มเป็น 6 รายการ)
   const { data: equipment } = await supabase
     .from("equipment")
@@ -329,7 +331,7 @@ async function handleEquipmentRentalRequest(userId: string) {
               },
               {
                 type: "text",
-                text: "กรุณาติดต่อเจ้าหน้าที่เพื่อจองและนัดหมายการรับเครื่องจักร",
+                text: "กดปุ่มด้านล่างเพื่อจองเครื่องจักรที่ต้องการได้เลย",
                 size: "xs",
                 color: "#999999",
                 wrap: true,
@@ -349,9 +351,9 @@ async function handleEquipmentRentalRequest(userId: string) {
             height: "sm",
             color: "#1DB446",
             action: {
-              type: "message",
-              label: "📞 ติดต่อเจ้าหน้าที่",
-              text: "ต้องการความช่วยเหลือ",
+              type: "uri",
+              label: "🚜 เช่าเครื่องจักร",
+              uri: `${baseUrl}/line/liff/booking`,
             },
           },
           {
