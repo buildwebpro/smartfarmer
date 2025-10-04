@@ -80,7 +80,8 @@ export async function getAIResponse(userMessage: string, conversationHistory: st
     return text || "ขออภัยครับ ไม่สามารถตอบคำถามได้ในขณะนี้"
   } catch (error) {
     console.error("Gemini AI Error:", error)
-    return "ขอโทษครับ ระบบ AI มีปัญหาชั่วคราว กรุณาติดต่อเจ้าหน้าที่โดยตรงครับ"
+    // ส่ง error กลับไปให้ webhook จัดการแทน
+    throw error
   }
 }
 

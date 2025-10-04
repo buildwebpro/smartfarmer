@@ -676,7 +676,88 @@ async function handleAIResponse(userId: string, message: string) {
     })
   } catch (error) {
     console.error("AI Response error:", error)
-    await sendWelcomeMessage(userId)
+
+    // แสดงข้อความที่เป็นมิตรพร้อมทางเลือกอื่น
+    await sendLineMessage(userId, {
+      type: "flex",
+      altText: "ขออภัย ไม่สามารถตอบคำถามได้",
+      contents: {
+        type: "bubble",
+        body: {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            {
+              type: "text",
+              text: "😊 ขออภัยค่ะ",
+              weight: "bold",
+              size: "lg",
+              color: "#FF6B6B",
+            },
+            {
+              type: "separator",
+              margin: "md",
+            },
+            {
+              type: "text",
+              text: "ตอนนี้ระบบไม่สามารถตอบคำถามนี้ได้ กรุณาลองใหม่อีกครั้ง หรือเลือกบริการด้านล่างได้เลยค่ะ",
+              wrap: true,
+              size: "sm",
+              color: "#555555",
+              margin: "md",
+            },
+          ],
+        },
+        footer: {
+          type: "box",
+          layout: "vertical",
+          spacing: "xs",
+          contents: [
+            {
+              type: "button",
+              style: "primary",
+              height: "sm",
+              color: "#1DB446",
+              action: {
+                type: "uri",
+                label: "🚁 จองบริการโดรน",
+                uri: `${baseUrl}/line/liff/booking`,
+              },
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "message",
+                label: "🚜 เช่าเครื่องจักร",
+                text: "เช่าเครื่องจักร",
+              },
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "message",
+                label: "💰 ดูราคา",
+                text: "ราคา",
+              },
+            },
+            {
+              type: "button",
+              style: "link",
+              height: "sm",
+              action: {
+                type: "message",
+                label: "❓ ช่วยเหลือ",
+                text: "ช่วยเหลือ",
+              },
+            },
+          ],
+        },
+      },
+    })
   }
 }
 
