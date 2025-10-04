@@ -3,19 +3,53 @@ import { supabase } from "@/lib/supabaseClient"
 import { validateBookingData, sanitizeInput, logSecurityEvent } from "@/lib/security"
 
 interface BookingData {
+  // Basic customer info
   customerName: string
   phoneNumber: string
+  customerEmail?: string
+  lineUserId?: string
+
+  // Farm location details
+  farmAddress?: string
+  district?: string
+  province?: string
+  farmAreaSize?: number // ขนาดพื้นที่ไร่
+  cropPlanted?: string // ประเภทพืชที่ปลูก
+  terrainType?: 'flat' | 'hilly' | 'flooded' | 'mixed'
+
+  // Service details
   areaSize: string
   cropType: string
   sprayType: string
-  gpsCoordinates: string
+  serviceType?: string
+  gpsCoordinates?: string
+
+  // Scheduling
   selectedDate: string | null
-  notes: string
+  pickupDatetime?: string
+  returnDatetime?: string
+  estimatedWorkDuration?: number
+  urgencyLevel?: 'normal' | 'urgent' | 'very_urgent'
+  preferredWorkTime?: 'morning' | 'afternoon' | 'evening' | 'night'
+
+  // Additional details
+  hasWaterSource?: boolean
+  hasObstacles?: boolean
+  specialRequirements?: string
+  referralSource?: string
+  notes?: string
+
+  // Terms acceptance
+  termsAccepted?: boolean
+  damagePolicyAccepted?: boolean
+  fuelResponsibilityAccepted?: boolean
+  returnConditionAccepted?: boolean
+
+  // Pricing
   totalPrice: number
   depositAmount: number
   status: string
   createdAt: string
-  lineUserId: string
 }
 
 export async function POST(request: NextRequest) {
@@ -36,6 +70,12 @@ export async function POST(request: NextRequest) {
     const sanitizedData = {
       ...bookingData,
       customerName: sanitizeInput(bookingData.customerName),
+      customerEmail: bookingData.customerEmail ? sanitizeInput(bookingData.customerEmail) : undefined,
+      farmAddress: bookingData.farmAddress ? sanitizeInput(bookingData.farmAddress) : undefined,
+      district: bookingData.district ? sanitizeInput(bookingData.district) : undefined,
+      province: bookingData.province ? sanitizeInput(bookingData.province) : undefined,
+      cropPlanted: bookingData.cropPlanted ? sanitizeInput(bookingData.cropPlanted) : undefined,
+      specialRequirements: bookingData.specialRequirements ? sanitizeInput(bookingData.specialRequirements) : undefined,
       notes: sanitizeInput(bookingData.notes || ''),
       gpsCoordinates: sanitizeInput(bookingData.gpsCoordinates || ''),
     }
@@ -64,11 +104,45 @@ export async function POST(request: NextRequest) {
           booking_code: `DR${Date.now()}`, // Generate unique booking code
           customer_name: sanitizedData.customerName,
           customer_phone: sanitizedData.phoneNumber.replace(/[-\s]/g, ''),
+          customer_email: sanitizedData.customerEmail || null,
+
+          // Farm location
+          farm_address: sanitizedData.farmAddress || null,
+          district: sanitizedData.district || null,
+          province: sanitizedData.province || null,
+          farm_area_size: sanitizedData.farmAreaSize || null,
+          crop_planted: sanitizedData.cropPlanted || null,
+          terrain_type: sanitizedData.terrainType || null,
+
+          // Service details
           area_size: parseFloat(sanitizedData.areaSize),
-          gps_coordinates: sanitizedData.gpsCoordinates,
+          service_type: sanitizedData.serviceType || null,
+          gps_coordinates: sanitizedData.gpsCoordinates || null,
+
+          // Scheduling
           scheduled_date: sanitizedData.selectedDate ? new Date(sanitizedData.selectedDate).toISOString().split('T')[0] : null,
           scheduled_time: "08:00:00", // เพิ่ม default time
+          pickup_datetime: sanitizedData.pickupDatetime ? new Date(sanitizedData.pickupDatetime).toISOString() : null,
+          return_datetime: sanitizedData.returnDatetime ? new Date(sanitizedData.returnDatetime).toISOString() : null,
+          estimated_work_duration: sanitizedData.estimatedWorkDuration || null,
+          urgency_level: sanitizedData.urgencyLevel || 'normal',
+          preferred_work_time: sanitizedData.preferredWorkTime || null,
+
+          // Additional details
+          has_water_source: sanitizedData.hasWaterSource ?? null,
+          has_obstacles: sanitizedData.hasObstacles ?? null,
+          special_requirements: sanitizedData.specialRequirements || null,
+          referral_source: sanitizedData.referralSource || null,
           notes: `พืช: ${cropTypeMap[sanitizedData.cropType] || sanitizedData.cropType}\nสารพ่น: ${sprayTypeMap[sanitizedData.sprayType] || sanitizedData.sprayType}\n${sanitizedData.notes ? '\nหมายเหตุ: ' + sanitizedData.notes : ''}`,
+
+          // Terms acceptance
+          terms_accepted: sanitizedData.termsAccepted || false,
+          damage_policy_accepted: sanitizedData.damagePolicyAccepted || false,
+          fuel_responsibility_accepted: sanitizedData.fuelResponsibilityAccepted || false,
+          return_condition_accepted: sanitizedData.returnConditionAccepted || false,
+          terms_accepted_at: sanitizedData.termsAccepted ? new Date().toISOString() : null,
+
+          // Pricing and status
           total_price: sanitizedData.totalPrice,
           deposit_amount: sanitizedData.depositAmount,
           status: "pending_payment",

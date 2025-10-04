@@ -44,14 +44,42 @@ export default function BookingPage() {
   const [selectedEquipment, setSelectedEquipment] = useState<string>('')
 
   const [formData, setFormData] = useState({
+    // Basic info
     customerName: "",
     phoneNumber: "",
+    customerEmail: "",
+
+    // Farm location
+    farmAddress: "",
+    district: "",
+    province: "",
+    farmAreaSize: "",
+    cropPlanted: "",
+    terrainType: "",
+
+    // Service details
     areaSize: "",
     cropType: "",
     sprayType: "",
     gpsCoordinates: "",
     selectedDate: undefined as Date | undefined,
+
+    // Time preferences
+    urgencyLevel: "normal",
+    preferredWorkTime: "",
+
+    // Additional info
+    hasWaterSource: false,
+    hasObstacles: false,
+    specialRequirements: "",
+    referralSource: "",
     notes: "",
+
+    // Terms
+    termsAccepted: false,
+    damagePolicyAccepted: false,
+    fuelResponsibilityAccepted: false,
+    returnConditionAccepted: false,
   })
   const [lineUserId, setLineUserId] = useState<string>("guest-user")
   const [gettingLocation, setGettingLocation] = useState(false)
@@ -213,6 +241,21 @@ export default function BookingPage() {
       return
     }
 
+    if (!formData.farmAddress.trim()) {
+      alert("กรุณากรอกที่อยู่แปลงเกษตร")
+      return
+    }
+
+    if (!formData.district.trim()) {
+      alert("กรุณากรอกตำบล/อำเภอ")
+      return
+    }
+
+    if (!formData.province.trim()) {
+      alert("กรุณากรอกจังหวัด")
+      return
+    }
+
     if (serviceType === 'drone') {
       if (!formData.areaSize) {
         alert("กรุณากรอกจำนวนไร่")
@@ -245,6 +288,13 @@ export default function BookingPage() {
       return
     }
 
+    // Validate terms acceptance
+    if (!formData.termsAccepted || !formData.damagePolicyAccepted ||
+        !formData.fuelResponsibilityAccepted || !formData.returnConditionAccepted) {
+      alert("กรุณายอมรับเงื่อนไขการเช่าทั้งหมด")
+      return
+    }
+
     // ตรวจสอบกฎ 3 วันล่วงหน้า
     const today = new Date()
     const minDate = new Date(today)
@@ -271,6 +321,7 @@ export default function BookingPage() {
     const bookingData = serviceType === 'drone'
       ? {
           ...formData,
+          farmAreaSize: formData.farmAreaSize ? parseFloat(formData.farmAreaSize) : undefined,
           lineUserId,
           totalPrice,
           depositAmount,
@@ -281,8 +332,25 @@ export default function BookingPage() {
       : {
           customerName: formData.customerName,
           phoneNumber: formData.phoneNumber,
+          customerEmail: formData.customerEmail,
+          farmAddress: formData.farmAddress,
+          district: formData.district,
+          province: formData.province,
+          farmAreaSize: formData.farmAreaSize ? parseFloat(formData.farmAreaSize) : undefined,
+          cropPlanted: formData.cropPlanted,
+          terrainType: formData.terrainType,
           selectedDate: formData.selectedDate,
+          urgencyLevel: formData.urgencyLevel,
+          preferredWorkTime: formData.preferredWorkTime,
+          hasWaterSource: formData.hasWaterSource,
+          hasObstacles: formData.hasObstacles,
+          specialRequirements: formData.specialRequirements,
+          referralSource: formData.referralSource,
           notes: formData.notes,
+          termsAccepted: formData.termsAccepted,
+          damagePolicyAccepted: formData.damagePolicyAccepted,
+          fuelResponsibilityAccepted: formData.fuelResponsibilityAccepted,
+          returnConditionAccepted: formData.returnConditionAccepted,
           lineUserId,
           totalPrice,
           depositAmount,
@@ -448,10 +516,102 @@ export default function BookingPage() {
                     <Input
                       id="phoneNumber"
                       type="tel"
+                      placeholder="08x-xxx-xxxx"
                       value={formData.phoneNumber}
                       onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                       required
                     />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="customerEmail">อีเมล (ถ้ามี)</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    placeholder="example@email.com"
+                    value={formData.customerEmail}
+                    onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">สำหรับส่งเอกสาร/ใบเสร็จ</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Farm Location */}
+            <Card>
+              <CardHeader>
+                <CardTitle>ที่อยู่แปลงเกษตร</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="farmAddress">ที่อยู่ไร่/แปลงเกษตร *</Label>
+                  <Input
+                    id="farmAddress"
+                    placeholder="เช่น 123 หมู่ 5 ต.บ้านนา"
+                    value={formData.farmAddress}
+                    onChange={(e) => setFormData({ ...formData, farmAddress: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="district">ตำบล/อำเภอ *</Label>
+                    <Input
+                      id="district"
+                      placeholder="เช่น เมือง"
+                      value={formData.district}
+                      onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="province">จังหวัด *</Label>
+                    <Input
+                      id="province"
+                      placeholder="เช่น เชียงใหม่"
+                      value={formData.province}
+                      onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="farmAreaSize">ขนาดพื้นที่ (ไร่)</Label>
+                    <Input
+                      id="farmAreaSize"
+                      type="number"
+                      step="0.1"
+                      placeholder="10.5"
+                      value={formData.farmAreaSize}
+                      onChange={(e) => setFormData({ ...formData, farmAreaSize: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="cropPlanted">ประเภทพืชที่ปลูก</Label>
+                    <Input
+                      id="cropPlanted"
+                      placeholder="เช่น ข้าวหอมมะลิ"
+                      value={formData.cropPlanted}
+                      onChange={(e) => setFormData({ ...formData, cropPlanted: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="terrainType">ลักษณะภูมิประเทศ</Label>
+                    <Select
+                      value={formData.terrainType}
+                      onValueChange={(value) => setFormData({ ...formData, terrainType: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือก" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="flat">ที่ราบ</SelectItem>
+                        <SelectItem value="hilly">เนินเขา</SelectItem>
+                        <SelectItem value="flooded">มีน้ำท่วมขัง</SelectItem>
+                        <SelectItem value="mixed">ผสม</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </CardContent>
@@ -631,7 +791,7 @@ export default function BookingPage() {
             {/* Date Selection */}
             <Card>
               <CardHeader>
-                <CardTitle>เลือกวัน</CardTitle>
+                <CardTitle>เลือกวันและเวลา</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-6">
@@ -669,6 +829,100 @@ export default function BookingPage() {
                       })()}
                     </div>
                   </div>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="preferredWorkTime">ช่วงเวลาที่ต้องการ</Label>
+                      <Select
+                        value={formData.preferredWorkTime}
+                        onValueChange={(value) => setFormData({ ...formData, preferredWorkTime: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกช่วงเวลา" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="morning">เช้า (06:00-10:00)</SelectItem>
+                          <SelectItem value="afternoon">บ่าย (10:00-14:00)</SelectItem>
+                          <SelectItem value="evening">เย็น (14:00-18:00)</SelectItem>
+                          <SelectItem value="night">กลางคืน (18:00-22:00)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="urgencyLevel">ความเร่งด่วน</Label>
+                      <Select
+                        value={formData.urgencyLevel}
+                        onValueChange={(value) => setFormData({ ...formData, urgencyLevel: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="normal">ปกติ</SelectItem>
+                          <SelectItem value="urgent">เร่งด่วน</SelectItem>
+                          <SelectItem value="very_urgent">เร่งด่วนมาก</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle>ข้อมูลเพิ่มเติม</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="hasWaterSource"
+                      checked={formData.hasWaterSource}
+                      onChange={(e) => setFormData({ ...formData, hasWaterSource: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="hasWaterSource" className="cursor-pointer">มีแหล่งน้ำในพื้นที่</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="hasObstacles"
+                      checked={formData.hasObstacles}
+                      onChange={(e) => setFormData({ ...formData, hasObstacles: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="hasObstacles" className="cursor-pointer">มีสิ่งกีดขวาง (เสาไฟ/ต้นไม้)</Label>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="referralSource">รู้จักเราจากช่องทางใด</Label>
+                  <Select
+                    value={formData.referralSource}
+                    onValueChange={(value) => setFormData({ ...formData, referralSource: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="เลือกช่องทาง" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="line">LINE</SelectItem>
+                      <SelectItem value="facebook">Facebook</SelectItem>
+                      <SelectItem value="friend">เพื่อนแนะนำ</SelectItem>
+                      <SelectItem value="google">Google Search</SelectItem>
+                      <SelectItem value="other">อื่นๆ</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="specialRequirements">ความต้องการพิเศษ/ข้อกำหนดเพิ่มเติม</Label>
+                  <Textarea
+                    id="specialRequirements"
+                    placeholder="เช่น กรุณาเตรียมน้ำสำรอง, โทรก่อนมาถึง 30 นาที"
+                    value={formData.specialRequirements}
+                    onChange={(e) => setFormData({ ...formData, specialRequirements: e.target.value })}
+                    rows={3}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -713,6 +967,70 @@ export default function BookingPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
+              </CardContent>
+            </Card>
+
+            {/* Terms and Conditions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>เงื่อนไขการเช่า</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="termsAccepted"
+                    checked={formData.termsAccepted}
+                    onChange={(e) => setFormData({ ...formData, termsAccepted: e.target.checked })}
+                    className="w-4 h-4 mt-1"
+                    required
+                  />
+                  <Label htmlFor="termsAccepted" className="cursor-pointer">
+                    <span className="text-red-600">*</span> ยอมรับเงื่อนไขการเช่าและการให้บริการ
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="damagePolicyAccepted"
+                    checked={formData.damagePolicyAccepted}
+                    onChange={(e) => setFormData({ ...formData, damagePolicyAccepted: e.target.checked })}
+                    className="w-4 h-4 mt-1"
+                    required
+                  />
+                  <Label htmlFor="damagePolicyAccepted" className="cursor-pointer">
+                    <span className="text-red-600">*</span> รับทราบนโยบายค่าเสียหายและความรับผิดชอบ
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="fuelResponsibilityAccepted"
+                    checked={formData.fuelResponsibilityAccepted}
+                    onChange={(e) => setFormData({ ...formData, fuelResponsibilityAccepted: e.target.checked })}
+                    className="w-4 h-4 mt-1"
+                    required
+                  />
+                  <Label htmlFor="fuelResponsibilityAccepted" className="cursor-pointer">
+                    <span className="text-red-600">*</span> รับผิดชอบค่าน้ำมันเชื้อเพลิงตามการใช้งานจริง
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="returnConditionAccepted"
+                    checked={formData.returnConditionAccepted}
+                    onChange={(e) => setFormData({ ...formData, returnConditionAccepted: e.target.checked })}
+                    className="w-4 h-4 mt-1"
+                    required
+                  />
+                  <Label htmlFor="returnConditionAccepted" className="cursor-pointer">
+                    <span className="text-red-600">*</span> ยืนยันว่าจะคืนเครื่องในสภาพเรียบร้อย ตรงเวลาตามที่กำหนด
+                  </Label>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  การกดยืนยันถือว่าท่านได้อ่านและยอมรับเงื่อนไขทั้งหมดแล้ว
+                </p>
               </CardContent>
             </Card>
 
