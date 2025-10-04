@@ -24,8 +24,8 @@ import {
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState({
     // General Settings
-    site_name: "Drone Booking Service",
-    site_description: "บริการจองโดรนพ่นยาเกษตร",
+    site_name: "SmartFarmer",
+    site_description: "SmartFarmer - ระบบบริหารงานการเกษตร",
     contact_email: "admin@dronebooking.com",
     contact_phone: "02-123-4567",
     

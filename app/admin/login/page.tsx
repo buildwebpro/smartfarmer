@@ -8,9 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Zap, Eye, EyeOff } from "lucide-react"
+import { Zap, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/useAuth"
+import Link from "next/link"
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -23,33 +24,23 @@ export default function LoginPage() {
   const router = useRouter()
   const { login, user, isLoading: authLoading } = useAuth()
 
-  // ✅ ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard (แค่ตรวจสอบ user เท่านั้น)
+  // ถ้าผู้ใช้ login แล้ว ให้ redirect ไปหน้า dashboard
   useEffect(() => {
-    console.log('LoginPage - user:', user)
-    console.log('LoginPage - isLoading (auth):', authLoading)
     if (user) {
-      console.log('LoginPage - User found, redirecting to /admin')
-      // ใช้ replace แทน push เพื่อไม่ให้กลับมาหน้า login ได้
       router.replace("/admin")
     }
   }, [user, router, authLoading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('LoginPage - handleSubmit started')
     setIsLoading(true)
     setError("")
 
     try {
-      console.log('LoginPage - calling login with:', formData.email)
       await login(formData.email, formData.password)
-      console.log('LoginPage - login call completed successfully')
-      // ลบ router.push ออกเพราะมี useEffect จัดการแล้ว
     } catch (err: any) {
-      console.log('LoginPage - login error:', err)
       setError(err.message || "เกิดข้อผิดพลาดในการเข้าสู่ระบบ")
     } finally {
-      console.log('LoginPage - setting isLoading to false')
       setIsLoading(false)
     }
   }
@@ -70,11 +61,15 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-           <img src="/images/drone-service-login-logo.webp" alt="Drone Service Logo" className="h-16 w-auto" />
+          <div className="flex items-center justify-between mb-4">
+            <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <img src="/images/drone-service-login-logo.webp" alt="Drone Service Logo" className="h-16 w-auto" />
+            <div className="w-5"></div>
           </div>
           <CardTitle className="text-2xl font-bold">เข้าสู่ระบบ</CardTitle>
-          <CardDescription>ระบบจัดการบริการพ่นยาโดรน</CardDescription>
+          <CardDescription>SmartFarmer - ระบบบริหารงานการเกษตร</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -125,9 +120,15 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>ระบบจัดการบริการพ่นยาโดรน</p>
-            <p>เวอร์ชั่นเดโม:</p>
+          <div className="mt-6 text-center">
+            <Link href="/" className="text-sm text-emerald-600 hover:text-emerald-700 hover:underline transition-colors inline-flex items-center gap-1">
+              <ArrowLeft className="h-4 w-4" />
+              กลับสู่หน้าแรก
+            </Link>
+            <div className="mt-4 text-sm text-gray-600">
+              <p>SmartFarmer - ระบบบริหารงานการเกษตร</p>
+              <p>ระบบเวอร์ชั่น 1.08อv</p>
+            </div>
           </div>
         </CardContent>
       </Card>

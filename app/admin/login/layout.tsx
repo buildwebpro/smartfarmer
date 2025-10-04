@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Admin Login - Drone Service',
-  description: 'Admin login page for drone service management',
+  title: 'Admin Login - SmartFarmer',
+  description: 'Admin login page for SmartFarmer agricultural service management',
 }
 
 export default function AdminLoginLayout({

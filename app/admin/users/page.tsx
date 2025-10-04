@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Users, Plus, Edit, Trash2, RefreshCw, Shield, User, UserCheck, UserX, Crown } from "lucide-react"
+import { Users, Plus, Edit, Trash2, RefreshCw, Shield, User, UserCheck, UserX, Crown, Key } from "lucide-react"
 import ProtectedRoute from "@/components/protected-route"
 
 interface User {
@@ -49,15 +49,18 @@ export default function AdminUsersPage() {
   
   // User states
   const [editingUser, setEditingUser] = useState<User | null>(null)
-  const [newUser, setNewUser] = useState({ 
-    email: "", 
-    full_name: "", 
+  const [newUser, setNewUser] = useState({
+    email: "",
+    full_name: "",
     password: "",
     role: "user" as 'admin' | 'user',
-    is_active: true 
+    is_active: true
   })
   const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false)
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
+  const [changePasswordUserId, setChangePasswordUserId] = useState<string | null>(null)
+  const [newPassword, setNewPassword] = useState("")
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false)
 
   const fetchUsers = async () => {
     setLoading(true)
@@ -148,24 +151,66 @@ export default function AdminUsersPage() {
 
   const handleDeleteUser = async (id: string) => {
     if (!confirm("คุณแน่ใจว่าต้องการลบผู้ใช้นี้?")) return
-    
+
     try {
       const response = await fetch("/api/admin/users", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       })
-      
+
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.error || "เกิดข้อผิดพลาด")
       }
-      
+
       fetchUsers()
       alert("ลบข้อมูลสำเร็จ")
     } catch (error) {
       console.error("Error deleting user:", error)
       alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถลบข้อมูลได้"}`)
+    }
+  }
+
+  const handleOpenChangePassword = (userId: string) => {
+    setChangePasswordUserId(userId)
+    setNewPassword("")
+    setIsPasswordDialogOpen(true)
+  }
+
+  const handleChangePassword = async () => {
+    if (!changePasswordUserId || !newPassword) {
+      alert("กรุณากรอกรหัสผ่านใหม่")
+      return
+    }
+
+    if (newPassword.length < 6) {
+      alert("รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร")
+      return
+    }
+
+    try {
+      const response = await fetch("/api/admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: changePasswordUserId,
+          password: newPassword
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "เกิดข้อผิดพลาด")
+      }
+
+      setIsPasswordDialogOpen(false)
+      setChangePasswordUserId(null)
+      setNewPassword("")
+      alert("เปลี่ยนรหัสผ่านสำเร็จ")
+    } catch (error) {
+      console.error("Error changing password:", error)
+      alert(`เกิดข้อผิดพลาด: ${error instanceof Error ? error.message : "ไม่สามารถเปลี่ยนรหัสผ่านได้"}`)
     }
   }
 
@@ -452,13 +497,18 @@ export default function AdminUsersPage() {
                               </>
                             ) : (
                               <>
-                                <Button size="sm" variant="outline" onClick={() => handleEditUser(user)}>
+                                <Button size="sm" variant="outline" onClick={() => handleEditUser(user)} title="แก้ไขข้อมูล">
                                   <Edit className="h-4 w-4" />
                                 </Button>
                                 {isAdmin && (
-                                  <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <>
+                                    <Button size="sm" variant="outline" onClick={() => handleOpenChangePassword(user.id)} title="เปลี่ยนรหัสผ่าน" className="text-orange-600 hover:text-orange-700 hover:bg-orange-50">
+                                      <Key className="h-4 w-4" />
+                                    </Button>
+                                    <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)} title="ลบผู้ใช้">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </>
                                 )}
                               </>
                             )}
@@ -472,6 +522,37 @@ export default function AdminUsersPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Change Password Dialog */}
+        <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>เปลี่ยนรหัสผ่าน</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="newPassword">รหัสผ่านใหม่</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="กรอกรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <p className="text-xs text-gray-500 mt-1">รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร</p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setIsPasswordDialogOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button onClick={handleChangePassword} className="bg-orange-600 hover:bg-orange-700">
+                  <Key className="h-4 w-4 mr-2" />
+                  เปลี่ยนรหัสผ่าน
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   )

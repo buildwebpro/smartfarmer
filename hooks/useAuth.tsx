@@ -64,57 +64,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // ✅ ปรับปรุงฟังก์ชัน login ให้ใช้ query เดียว
   const login = async (email: string, password: string) => {
-    console.log('useAuth - login started for:', email)
     setIsLoading(true)
     try {
-      console.log('useAuth - calling signInWithEmailAndGetAdminData...')
       const { data, error, adminData } = await signInWithEmailAndGetAdminData(email, password)
-      console.log('useAuth - signInWithEmailAndGetAdminData result:', {
-        hasData: !!data,
-        hasError: !!error,
-        hasAdminData: !!adminData,
-        adminRole: adminData?.role
-      })
-      
+
       if (error) {
-        console.log('useAuth - throwing error:', error)
         throw error
       }
-      
+
       if (data?.user) {
-        // ใช้ข้อมูล admin ที่ได้มาจาก query เดียว
         const userData = adminData ? {
           id: adminData.id,
           email: adminData.email,
           username: adminData.username,
           role: adminData.role,
         } : { id: data.user.id, email: data.user.email! }
-        
-        console.log('useAuth - setting user data:', userData)
+
         setUser(userData)
-        console.log('useAuth - user state updated successfully')
-      } else {
-        console.log('useAuth - no user data found in result')
       }
     } catch (error) {
-      console.error('useAuth - login error:', error)
       throw error
     } finally {
-      console.log('useAuth - setting isLoading to false')
       setIsLoading(false)
-      console.log('useAuth - login completed')
     }
   }
 
-  // ✅ ปรับปรุงฟังก์ชัน signup ให้ใช้ query เดียว
   const signup = async (email: string, password: string) => {
     setIsLoading(true)
     try {
       const { data, error } = await signUpWithEmail(email, password)
       if (error) throw error
-      
+
       if (data?.user) {
         const { data: adminData } = await getAdminUserByEmail(email)
         if (adminData) {
@@ -135,14 +116,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // ✅ ปรับปรุงฟังก์ชัน logout ให้เร็วขึ้น
   const logout = async () => {
     setIsLoading(true)
     try {
       await signOut()
       setUser(null)
-    } catch (error) {
-      console.error('Logout error:', error)
     } finally {
       setIsLoading(false)
     }

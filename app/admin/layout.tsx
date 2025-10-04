@@ -11,22 +11,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  // ✅ Debug logging เพื่อดูสถานะ
-  useEffect(() => {
-    console.log('AdminLayout - user:', user)
-    console.log('AdminLayout - isLoading:', isLoading)
-    console.log('AdminLayout - pathname:', pathname)
-  }, [user, isLoading, pathname])
-
-  // ✅ ตรวจสอบการล็อคอิน และ redirect ถ้าไม่ได้ล็อคอิน (ยกเว้นหน้า login)
+  // ตรวจสอบการล็อคอิน และ redirect ถ้าไม่ได้ล็อคอิน (ยกเว้นหน้า login)
   useEffect(() => {
     if (!isLoading && !user && !pathname.includes('/login')) {
-      console.log('AdminLayout - Redirecting to login')
-      router.replace("/admin/login") // ใช้ replace แทน push
+      router.replace("/admin/login")
     }
   }, [user, isLoading, router, pathname])
 
-  // ✅ ถ้าเป็นหน้า login ให้แสดงเลยไม่ต้องรอ (ใช้ usePathname แทน window.location)
+  // ถ้าเป็นหน้า login ให้แสดงเลยไม่ต้องรอ
   if (pathname.includes('/login')) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -45,21 +37,6 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
     )
-  }
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // ถ้าไม่ได้ login ให้แสดงหน้าเปล่าขณะ redirect
-  if (!user) {
-    return null
   }
 
   return (

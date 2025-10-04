@@ -34,19 +34,30 @@ export default function AdminOrdersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [cropTypes, setCropTypes] = useState<{[key: string]: string}>({})
   const [sprayTypes, setSprayTypes] = useState<{[key: string]: string}>({})
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const ITEMS_PER_PAGE = 20
 
   const fetchOrders = async () => {
     setLoading(true)
-    
-    // Fetch orders, crop types, and spray types
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE - 1
+
+    // Fetch orders with pagination, crop types, and spray types
     const [ordersResult, cropTypesResponse, sprayTypesResponse] = await Promise.all([
-      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      supabase
+        .from("bookings")
+        .select("*", { count: 'exact' })
+        .order("created_at", { ascending: false })
+        .range(startIndex, endIndex),
       fetch('/api/crop-types'),
       fetch('/api/spray-types')
     ])
     
     if (!ordersResult.error && ordersResult.data) {
       setOrders(ordersResult.data as Order[])
+      setTotalCount(ordersResult.count || 0)
     }
     
     // Process crop types
@@ -100,7 +111,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders()
-  }, [])
+  }, [currentPage])
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     setUpdatingId(id)
@@ -178,7 +189,7 @@ export default function AdminOrdersPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{orders.length}</div>
+            <div className="text-2xl font-bold">{totalCount}</div>
             <p className="text-xs text-gray-500">รายการทั้งหมด</p>
           </CardContent>
         </Card>
@@ -403,6 +414,38 @@ export default function AdminOrdersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalCount > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            แสดง {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, totalCount)} จาก {totalCount} รายการ
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1 || loading}
+            >
+              ก่อนหน้า
+            </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">
+                หน้า {currentPage} / {Math.ceil(totalCount / ITEMS_PER_PAGE)}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalCount / ITEMS_PER_PAGE), prev + 1))}
+              disabled={currentPage >= Math.ceil(totalCount / ITEMS_PER_PAGE) || loading}
+            >
+              ถัดไป
+            </Button>
+          </div>
+        </div>
+      )}
       </div>
     </ProtectedRoute>
   )

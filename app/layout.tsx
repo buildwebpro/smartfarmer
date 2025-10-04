@@ -7,8 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ระบบจัดการโดรนพ่นยา",
-  description: "ระบบจัดการบริการพ่นยาโดรน",
+  title: "SmartFarmer - ระบบบริหารงานการเกษตร",
+  description: "ระบบบริหารงานการเกษตร โดรนพ่นยาและเครื่องจักรเกษตร",
     generator: 'v0.dev'
 }
 

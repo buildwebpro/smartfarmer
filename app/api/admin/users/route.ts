@@ -156,7 +156,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { id, email, full_name, role, is_active } = body
+    const { id, email, full_name, role, is_active, password } = body
 
     if (!id) {
       return NextResponse.json({ error: "ไม่พบ ID ผู้ใช้" }, { status: 400 })
@@ -166,10 +166,11 @@ export async function PUT(request: NextRequest) {
     const updateData: any = {}
     if (email) updateData.email = email
     if (full_name) updateData.user_metadata = { full_name }
+    if (password) updateData.password = password
 
     if (Object.keys(updateData).length > 0) {
       const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(id, updateData)
-      
+
       if (authError) {
         console.error("Error updating auth user:", authError)
         return NextResponse.json({ error: "Failed to update user" }, { status: 500 })

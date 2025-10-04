@@ -143,7 +143,7 @@ export function ModernNavigation({ user }: ModernNavProps) {
               <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                 <Zap className="h-5 w-5 text-emerald-600" />
               </div>
-              <span className="text-xl font-bold text-white">Drone Admin</span>
+              <span className="text-xl font-bold text-white">SmartFarmer</span>
             </div>
           </div>
           <nav className="flex flex-1 flex-col">
@@ -213,7 +213,7 @@ export function ModernNavigation({ user }: ModernNavProps) {
             <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
               <Zap className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold text-gray-900">Drone Admin</span>
+            <span className="text-xl font-bold text-gray-900">SmartFarmer</span>
           </div>
           <Button
             variant="ghost"
@@ -234,7 +234,7 @@ export function ModernNavigation({ user }: ModernNavProps) {
                   <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                     <Zap className="h-5 w-5 text-emerald-600" />
                   </div>
-                  <span className="text-xl font-bold text-white">Drone Admin</span>
+                  <span className="text-xl font-bold text-white">SmartFarmer</span>
                 </div>
                 <Button
                   variant="ghost"

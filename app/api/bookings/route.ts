@@ -173,31 +173,30 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Cache for 30 seconds
+export const revalidate = 30
+
 export async function GET() {
   try {
-    console.log('[API] Fetching bookings...')
-    const startTime = Date.now()
-    
     const { data, error } = await supabase
       .from("bookings")
       .select("*")
       .order("created_at", { ascending: false })
-      .limit(50) // จำกัดผลลัพธ์เพื่อความเร็ว
-    
-    console.log(`[API] Bookings query took: ${Date.now() - startTime}ms`)
-    
+      .limit(50)
+
     if (error) {
-      console.error("Error fetching bookings:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-    
-    console.log(`[API] Bookings response ready in: ${Date.now() - startTime}ms`)
+
     return NextResponse.json({
       success: true,
       data,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=59'
+      }
     })
   } catch (error) {
-    console.error("Error fetching bookings:", error)
     return NextResponse.json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูล" }, { status: 500 })
   }
 }
