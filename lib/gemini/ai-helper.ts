@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const GEMINI_API_KEY = "AIzaSyDcMzY_EyWAOMK1o7DGek37b8DjKKAdpDM"
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || "AIzaSyDcMzY_EyWAOMK1o7DGek37b8DjKKAdpDM"
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY)
 
 // ข้อมูลระบบบริการ
