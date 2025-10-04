@@ -49,9 +49,9 @@ export const FARMER_RICH_MENU: RichMenu = {
     {
       bounds: { x: 833, y: 0, width: 834, height: 843 },
       action: {
-        type: "uri",
+        type: "message",
         label: "เช่าเครื่องจักร",
-        uri: `${process.env.NEXT_PUBLIC_BASE_URL}/line/liff/rental`,
+        text: "เช่าเครื่องจักร",
       },
     },
     // แถวบน - ขวา: ดูประวัติ
